@@ -8,7 +8,16 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Car, MessageCircle, Phone, Send, Shield, Star, X } from "lucide-react";
+import {
+  Car,
+  MessageCircle,
+  Phone,
+  Send,
+  Share2,
+  Shield,
+  Star,
+  X,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -72,6 +81,15 @@ export default function TripTrackingPage() {
     toast.error("SOS alert sent to emergency contacts!");
   };
 
+  const handleShareTrip = () => {
+    tap();
+    const fakeLink = `https://pitthu.ai/track/${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    navigator.clipboard
+      .writeText(fakeLink)
+      .then(() => toast.success("Trip link copied! Share with loved ones."))
+      .catch(() => toast.info(`Trip link: ${fakeLink}`));
+  };
+
   const sendMessage = () => {
     if (!input.trim()) return;
     tap();
@@ -112,13 +130,20 @@ export default function TripTrackingPage() {
                 Rishikesh → Kedarnath
               </p>
             </div>
+            {/* Live badge */}
+            <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 border border-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-emerald-700 text-xs font-montserrat font-bold uppercase">
+                Live
+              </span>
+            </div>
           </div>
 
-          {/* Map */}
-          <Card className="shadow-card mb-6 overflow-hidden">
+          {/* Enhanced Map */}
+          <Card className="shadow-glass mb-6 overflow-hidden">
             <CardContent className="p-0">
               <div
-                className="relative bg-slate-900 h-48"
+                className="relative bg-slate-900 h-56"
                 style={{
                   backgroundImage:
                     "linear-gradient(rgba(59,130,246,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.07) 1px, transparent 1px)",
@@ -128,31 +153,48 @@ export default function TripTrackingPage() {
               >
                 <svg
                   className="absolute inset-0 w-full h-full"
-                  viewBox="0 0 360 160"
+                  viewBox="0 0 360 180"
                   role="img"
                   aria-label="Trip route map"
                 >
-                  {/* Road path */}
+                  {/* Hill terrain shading */}
                   <path
-                    d="M 40 80 Q 120 40 180 80 Q 240 120 320 80"
-                    stroke="rgba(255,255,255,0.15)"
-                    strokeWidth="12"
+                    d="M 0 140 Q 60 100 90 120 Q 120 80 160 100 Q 200 60 240 90 Q 280 50 320 70 Q 340 60 360 80 L 360 180 L 0 180 Z"
+                    fill="rgba(59,130,246,0.06)"
+                  />
+                  {/* Road path (thicker background) */}
+                  <path
+                    d="M 40 100 Q 100 60 160 90 Q 220 120 280 80 Q 310 65 330 75"
+                    stroke="rgba(255,255,255,0.08)"
+                    strokeWidth="14"
                     fill="none"
                     strokeLinecap="round"
                   />
+                  {/* Completed path (blue highlight) */}
                   <path
-                    d="M 40 80 Q 120 40 180 80 Q 240 120 320 80"
-                    stroke="rgba(255,255,255,0.3)"
+                    d="M 40 100 Q 100 60 160 90 Q 220 120 280 80 Q 310 65 330 75"
+                    stroke="oklch(0.42 0.18 255)"
+                    strokeWidth="3.5"
+                    fill="none"
+                    strokeDasharray="400"
+                    strokeDashoffset={400 - progress * 4}
+                    strokeLinecap="round"
+                    style={{ transition: "stroke-dashoffset 0.3s" }}
+                  />
+                  {/* Remaining path */}
+                  <path
+                    d="M 40 100 Q 100 60 160 90 Q 220 120 280 80 Q 310 65 330 75"
+                    stroke="rgba(255,255,255,0.15)"
                     strokeWidth="2"
                     fill="none"
                     strokeDasharray="8 6"
                     strokeLinecap="round"
                   />
-                  {/* Start pin */}
-                  <circle cx="40" cy="80" r="6" fill="#10b981" />
+                  {/* Start pin (A) */}
+                  <circle cx="40" cy="100" r="7" fill="#10b981" />
                   <text
                     x="40"
-                    y="100"
+                    y="118"
                     textAnchor="middle"
                     fill="#10b981"
                     fontSize="9"
@@ -160,11 +202,11 @@ export default function TripTrackingPage() {
                   >
                     A
                   </text>
-                  {/* End pin */}
-                  <circle cx="320" cy="80" r="6" fill="#ef4444" />
+                  {/* End pin (B) */}
+                  <circle cx="330" cy="75" r="7" fill="#ef4444" />
                   <text
-                    x="320"
-                    y="100"
+                    x="330"
+                    y="93"
                     textAnchor="middle"
                     fill="#ef4444"
                     fontSize="9"
@@ -172,40 +214,49 @@ export default function TripTrackingPage() {
                   >
                     B
                   </text>
-                  {/* Animated progress trail */}
-                  <path
-                    d="M 40 80 Q 120 40 180 80 Q 240 120 320 80"
-                    stroke="#3b82f6"
-                    strokeWidth="3"
-                    fill="none"
-                    strokeDasharray="400"
-                    strokeDashoffset={400 - progress * 4}
-                    strokeLinecap="round"
-                    style={{ transition: "stroke-dashoffset 0.3s" }}
-                  />
-                  {/* Car icon */}
-                  <g transform={`translate(${carX - 8}, ${carY - 8})`}>
-                    <rect width="16" height="10" rx="3" fill="#3b82f6" />
-                    <circle cx="3" cy="10" r="2.5" fill="white" />
-                    <circle cx="13" cy="10" r="2.5" fill="white" />
+                  {/* Animated car icon */}
+                  <g transform={`translate(${carX - 10}, ${carY - 8})`}>
                     <rect
-                      x="2"
-                      y="2"
-                      width="12"
-                      height="5"
-                      rx="2"
-                      fill="rgba(255,255,255,0.4)"
+                      width="20"
+                      height="12"
+                      rx="4"
+                      fill="oklch(0.42 0.18 255)"
                     />
+                    <rect
+                      x="3"
+                      y="2"
+                      width="14"
+                      height="6"
+                      rx="2"
+                      fill="rgba(255,255,255,0.35)"
+                    />
+                    <circle cx="5" cy="12" r="3" fill="white" />
+                    <circle cx="15" cy="12" r="3" fill="white" />
+                    {/* Headlight glow */}
+                    <circle cx="20" cy="6" r="2" fill="rgba(255,220,50,0.8)" />
                   </g>
                 </svg>
-                <div className="absolute top-3 left-3 bg-black/60 rounded-lg px-3 py-1.5">
-                  <p className="text-white font-montserrat font-bold text-xs uppercase">
+
+                {/* ETA overlay */}
+                <div className="absolute top-3 left-3 glass-dark rounded-xl px-3 py-2">
+                  <p className="text-white font-montserrat font-black text-sm uppercase">
                     ETA: {Math.ceil(eta)} min
+                  </p>
+                  <p className="text-white/60 text-[10px]">
+                    Rishikesh → Kedarnath
+                  </p>
+                </div>
+
+                {/* Route info overlay */}
+                <div className="absolute top-3 right-3 glass-dark rounded-xl px-2 py-1.5">
+                  <p className="text-white/80 text-[10px] font-medium">
+                    {Math.round(progress)}% complete
                   </p>
                 </div>
               </div>
+
               {/* Progress bar */}
-              <div className="h-1.5 bg-muted">
+              <div className="h-2 bg-muted">
                 <div
                   className="h-full bg-primary transition-all duration-300"
                   style={{ width: `${progress}%` }}
@@ -214,7 +265,7 @@ export default function TripTrackingPage() {
             </CardContent>
           </Card>
 
-          {/* Driver card */}
+          {/* Driver ETA Card */}
           <Card className="shadow-card mb-6">
             <CardContent className="p-5">
               <div className="flex items-center gap-4">
@@ -253,7 +304,7 @@ export default function TripTrackingPage() {
                 <div className="flex flex-col gap-2">
                   <button
                     type="button"
-                    className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20"
+                    className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
                     onClick={() => {
                       tap();
                       toast.info("Calling driver...");
@@ -264,7 +315,7 @@ export default function TripTrackingPage() {
                   </button>
                   <button
                     type="button"
-                    className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20"
+                    className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
                     onClick={() => {
                       tap();
                       setChatOpen(true);
@@ -276,8 +327,41 @@ export default function TripTrackingPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Arrives in callout */}
+              <div className="mt-4 bg-primary/8 rounded-xl px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-primary font-montserrat font-black text-2xl">
+                    Arrives in {Math.ceil(eta)} min
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    Rishikesh → Kedarnath · 156 km
+                  </p>
+                </div>
+                <Car className="w-8 h-8 text-primary/40" />
+              </div>
             </CardContent>
           </Card>
+
+          {/* Safety Buttons */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <button
+              type="button"
+              onClick={handleSOS}
+              className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-montserrat font-black uppercase tracking-wider rounded-2xl py-4 text-sm transition-all active:scale-95 shadow-card"
+              data-ocid="tracking.button"
+            >
+              🆘 SOS Emergency
+            </button>
+            <button
+              type="button"
+              onClick={handleShareTrip}
+              className="flex items-center justify-center gap-2 bg-card hover:bg-muted border border-border text-foreground font-montserrat font-bold uppercase tracking-wider rounded-2xl py-4 text-sm transition-all active:scale-95 shadow-card"
+              data-ocid="tracking.secondary_button"
+            >
+              <Share2 className="w-4 h-4" /> Share Trip
+            </button>
+          </div>
         </motion.div>
       </div>
 
@@ -347,9 +431,7 @@ export default function TripTrackingPage() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${
-                  msg.sender === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
                   className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
@@ -360,11 +442,7 @@ export default function TripTrackingPage() {
                 >
                   <p>{msg.text}</p>
                   <p
-                    className={`text-[10px] mt-1 ${
-                      msg.sender === "user"
-                        ? "text-primary-foreground/60"
-                        : "text-muted-foreground"
-                    }`}
+                    className={`text-[10px] mt-1 ${msg.sender === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}
                   >
                     {msg.time}
                   </p>

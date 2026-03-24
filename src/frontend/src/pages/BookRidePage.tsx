@@ -34,13 +34,16 @@ import {
   ChevronLeft,
   CloudRain,
   Loader2,
+  Mic,
   Minus,
   Moon,
   Mountain,
   Plus,
+  Share2,
   ShieldCheck,
   Star,
   Sun,
+  Wallet,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -50,6 +53,7 @@ import EmptyState from "../components/EmptyState";
 import SeatSelector from "../components/SeatSelector";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useHaptic } from "../hooks/useHaptic";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useCreateBooking } from "../hooks/useQueries";
 
 type RideType = "private" | "shared" | "bus";
@@ -97,9 +101,16 @@ export default function BookRidePage() {
   const [biometricProgress, setBiometricProgress] = useState(0);
   const [biometricDone, setBiometricDone] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [paymentTab, setPaymentTab] = useState<"upi" | "cash" | "wallet">(
+    "upi",
+  );
+  const [voiceState, setVoiceState] = useState<
+    "idle" | "listening" | "processing" | "result"
+  >("idle");
 
   const { mutateAsync: createBooking, isPending } = useCreateBooking();
   const { tap, success } = useHaptic();
+  const { identity, login, isLoggingIn } = useInternetIdentity();
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -136,6 +147,14 @@ export default function BookRidePage() {
     } else {
       toast.error("Invalid promo code");
     }
+  };
+
+  const handleVoiceBooking = () => {
+    tap();
+    setVoiceState("listening");
+    setTimeout(() => setVoiceState("processing"), 3000);
+    setTimeout(() => setVoiceState("result"), 5000);
+    setTimeout(() => setVoiceState("idle"), 8000);
   };
 
   const validate = () => {
@@ -201,8 +220,13 @@ export default function BookRidePage() {
       toast.success(
         `Booking confirmed! Earned ${coins} Pitthu Coins \uD83E\uDE99`,
       );
-    } catch {
-      toast.error("Booking failed. Please try again.");
+    } catch (err) {
+      const msg = String(err);
+      if (msg.includes("Unauthorized") || msg.includes("403")) {
+        toast.error("Please log in to book your ride");
+      } else {
+        toast.error("Booking failed. Please try again.");
+      }
     }
   };
 
@@ -495,6 +519,64 @@ export default function BookRidePage() {
                       </div>
                     </div>
 
+                    {/* Voice Booking */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                      <button
+                        type="button"
+                        onClick={handleVoiceBooking}
+                        className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${voiceState !== "idle" ? "bg-red-500 text-white" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+                        data-ocid="ride.button"
+                        aria-label="Voice booking"
+                      >
+                        <Mic className="w-5 h-5" />
+                        {voiceState === "listening" && (
+                          <span className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping" />
+                        )}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        {voiceState === "idle" && (
+                          <div>
+                            <p className="font-montserrat font-bold text-sm text-foreground">
+                              Voice Booking
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Tap to book by voice
+                            </p>
+                          </div>
+                        )}
+                        {voiceState === "listening" && (
+                          <div>
+                            <p className="font-montserrat font-bold text-sm text-red-600 animate-pulse">
+                              Listening...
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Say pickup and drop location
+                            </p>
+                          </div>
+                        )}
+                        {voiceState === "processing" && (
+                          <div>
+                            <p className="font-montserrat font-bold text-sm text-primary">
+                              Processing...
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Recognising speech
+                            </p>
+                          </div>
+                        )}
+                        {voiceState === "result" && (
+                          <div>
+                            <p className="font-montserrat font-bold text-xs text-emerald-600">
+                              ✓ Heard: Rishikesh to Badrinath
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Locations auto-filled
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Booking Mode */}
                     <div className="space-y-2">
                       <Label>Booking Time</Label>
@@ -540,33 +622,61 @@ export default function BookRidePage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-3 gap-3">
-                      {(["private", "shared", "bus"] as RideType[]).map(
-                        (type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => {
-                              tap();
-                              setRideType(type);
-                              setSelectedSeats([]);
-                            }}
-                            className={`p-4 rounded-xl border-2 text-center transition-all ${
-                              rideType === type
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-border hover:border-primary/50"
-                            }`}
-                            data-ocid="ride.toggle"
-                          >
-                            <p className="font-montserrat font-bold uppercase text-sm capitalize">
-                              {type}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              ₹{priceMap[type]}/person
-                            </p>
-                          </button>
-                        ),
-                      )}
+                    <div className="flex gap-3 overflow-x-auto pb-2">
+                      {[
+                        {
+                          type: "private" as RideType,
+                          emoji: "🚗",
+                          label: "Private Car",
+                          eta: "~8 min",
+                        },
+                        {
+                          type: "shared" as RideType,
+                          emoji: "🚙",
+                          label: "Shared Cab",
+                          eta: "~5 min",
+                        },
+                        {
+                          type: "bus" as RideType,
+                          emoji: "🚌",
+                          label: "Bus",
+                          eta: "~12 min",
+                        },
+                      ].map((v) => (
+                        <button
+                          key={v.type}
+                          type="button"
+                          onClick={() => {
+                            tap();
+                            setRideType(v.type);
+                            setSelectedSeats([]);
+                          }}
+                          className={`flex-shrink-0 w-32 p-4 rounded-2xl border-2 text-center transition-all hover:-translate-y-0.5 ${
+                            rideType === v.type
+                              ? "border-primary bg-primary/8 shadow-glass"
+                              : "border-border bg-card hover:border-primary/50"
+                          }`}
+                          data-ocid="ride.toggle"
+                        >
+                          <div className="text-4xl mb-2">{v.emoji}</div>
+                          <p className="font-montserrat font-bold uppercase text-xs text-foreground">
+                            {v.label}
+                          </p>
+                          <p className="text-xs text-primary font-semibold mt-1">
+                            ₹{priceMap[v.type]}/person
+                          </p>
+                          <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">
+                            {v.eta}
+                          </span>
+                          {rideType === v.type && (
+                            <div className="mt-2 w-4 h-4 rounded-full bg-primary mx-auto flex items-center justify-center">
+                              <span className="text-white text-[8px] font-black">
+                                ✓
+                              </span>
+                            </div>
+                          )}
+                        </button>
+                      ))}
                     </div>
 
                     {/* Solo / Pool */}
@@ -916,55 +1026,173 @@ export default function BookRidePage() {
                       )}
                     </div>
 
-                    {/* Payment Method */}
+                    {/* Payment Method — Tabs */}
                     <div className="space-y-2">
                       <Label className="text-xs">Payment Method</Label>
-                      <div className="flex gap-2">
-                        {UPI_METHODS.map((upi) => (
+                      <div className="flex gap-1 bg-muted rounded-xl p-1">
+                        {(["upi", "cash", "wallet"] as const).map((tab) => (
                           <button
-                            key={upi.id}
+                            key={tab}
                             type="button"
                             onClick={() => {
                               tap();
-                              setSelectedUPI(upi.id);
+                              setPaymentTab(tab);
                             }}
-                            className={`flex-1 flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${
-                              selectedUPI === upi.id
-                                ? "border-primary"
-                                : "border-border"
-                            }`}
-                            data-ocid="ride.button"
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-montserrat font-bold uppercase transition-all ${paymentTab === tab ? "bg-card shadow-xs text-foreground" : "text-muted-foreground"}`}
+                            data-ocid="ride.toggle"
                           >
-                            <div
-                              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                              style={{ backgroundColor: upi.color }}
-                            >
-                              {upi.abbr}
-                            </div>
-                            <span className="text-[10px] text-muted-foreground">
-                              {upi.label}
-                            </span>
+                            {tab === "upi"
+                              ? "UPI"
+                              : tab === "cash"
+                                ? "Cash"
+                                : "Wallet"}
                           </button>
                         ))}
                       </div>
+                      {paymentTab === "upi" && (
+                        <div className="flex gap-2">
+                          {UPI_METHODS.map((upi) => (
+                            <button
+                              key={upi.id}
+                              type="button"
+                              onClick={() => {
+                                tap();
+                                setSelectedUPI(upi.id);
+                              }}
+                              className={`flex-1 flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${selectedUPI === upi.id ? "border-primary" : "border-border"}`}
+                              data-ocid="ride.button"
+                            >
+                              <div
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                style={{ backgroundColor: upi.color }}
+                              >
+                                {upi.abbr}
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">
+                                {upi.label}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {paymentTab === "cash" && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+                          <span className="text-2xl">💵</span>
+                          <p className="text-sm font-medium">
+                            Pay ₹{finalFare} in cash to driver on arrival
+                          </p>
+                        </div>
+                      )}
+                      {paymentTab === "wallet" && (
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-primary/8 border border-primary/20">
+                          <div className="flex items-center gap-2">
+                            <Wallet className="w-5 h-5 text-primary" />
+                            <div>
+                              <p className="text-sm font-bold text-foreground">
+                                Pitthu Wallet
+                              </p>
+                              <p className="text-xs text-emerald-600 font-medium">
+                                Balance: ₹850
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="text-xs font-montserrat font-bold text-primary uppercase border border-primary rounded-full px-3 py-1 hover:bg-primary/10 transition-colors"
+                            onClick={() => {
+                              tap();
+                              toast.success("Wallet balance applied!");
+                            }}
+                            data-ocid="ride.button"
+                          >
+                            Use Balance
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    <Button
-                      type="submit"
-                      disabled={isPending}
-                      onClick={() => tap()}
-                      className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase tracking-wider rounded-full"
-                      data-ocid="ride.submit_button"
-                    >
-                      {isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
-                          Booking...
-                        </>
-                      ) : (
-                        t("confirmBooking")
-                      )}
-                    </Button>
+                    {/* Safety Bar */}
+                    <div className="rounded-xl border border-border p-3 bg-muted/50">
+                      <p className="text-xs font-montserrat font-bold uppercase text-muted-foreground mb-2">
+                        🛡️ Safety Features
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            tap();
+                            toast.error(
+                              "Emergency services alerted! Stay safe.",
+                            );
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-montserrat font-bold uppercase rounded-lg py-2 transition-colors"
+                          data-ocid="ride.button"
+                        >
+                          🆘 SOS
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            tap();
+                            const link = `https://pitthu.ai/track/${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                            navigator.clipboard
+                              .writeText(link)
+                              .then(() => toast.success("Trip link copied!"))
+                              .catch(() => toast.info(`Link: ${link}`));
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-card hover:bg-muted border border-border text-foreground text-xs font-montserrat font-bold uppercase rounded-lg py-2 transition-colors"
+                          data-ocid="ride.secondary_button"
+                        >
+                          <Share2 className="w-3 h-3" /> Share Trip
+                        </button>
+                        <div className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg py-2">
+                          👤 Verified
+                        </div>
+                      </div>
+                    </div>
+
+                    {!identity ? (
+                      <div
+                        className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-center space-y-3"
+                        data-ocid="ride.login_state"
+                      >
+                        <p className="text-amber-800 font-medium">
+                          Login required to book
+                        </p>
+                        <p className="text-amber-600 text-sm">
+                          Securely login with Internet Identity to confirm your
+                          booking
+                        </p>
+                        <Button
+                          onClick={login}
+                          disabled={isLoggingIn}
+                          className="w-full bg-amber-600 hover:bg-amber-700 text-white font-montserrat font-bold uppercase tracking-wider rounded-full"
+                          data-ocid="ride.primary_button"
+                        >
+                          {isLoggingIn ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : null}
+                          Login with Internet Identity
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={isPending}
+                        onClick={() => tap()}
+                        className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase tracking-wider rounded-full"
+                        data-ocid="ride.submit_button"
+                      >
+                        {isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                            Booking...
+                          </>
+                        ) : (
+                          t("confirmBooking")
+                        )}
+                      </Button>
+                    )}
                     <div className="flex items-center gap-2 text-xs text-emerald-600 font-medium">
                       <ShieldCheck className="w-4 h-4" />
                       Safety Verified Driver &amp; Insured Ride

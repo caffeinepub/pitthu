@@ -40,6 +40,7 @@ import { toast } from "sonner";
 import CityAutocomplete from "../components/CityAutocomplete";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useHaptic } from "../hooks/useHaptic";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useCreateBooking } from "../hooks/useQueries";
 
 type DroneType = "fast" | "heavy";
@@ -83,6 +84,7 @@ export default function DroneDeliveryPage() {
 
   const { mutateAsync: createBooking, isPending } = useCreateBooking();
   const { tap, success } = useHaptic();
+  const { identity, login, isLoggingIn } = useInternetIdentity();
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -188,8 +190,13 @@ export default function DroneDeliveryPage() {
       toast.success(
         `Drone delivery booked! Earned ${coins} Pitthu Coins \uD83E\uDE99`,
       );
-    } catch {
-      toast.error("Booking failed. Please try again.");
+    } catch (err) {
+      const msg = String(err);
+      if (msg.includes("Unauthorized") || msg.includes("403")) {
+        toast.error("Please log in to book your delivery");
+      } else {
+        toast.error("Booking failed. Please try again.");
+      }
     }
   };
 
@@ -353,6 +360,7 @@ export default function DroneDeliveryPage() {
               { id: "trek", label: "🥾 Follow Trek" },
               { id: "reverse", label: "🔬 Reverse" },
               { id: "aarti", label: "🕉️ Aarti Live" },
+              { id: "tracking", label: "📡 Live Track" },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -934,27 +942,53 @@ export default function DroneDeliveryPage() {
                       </div>
                     )}
 
-                    <Button
-                      type="submit"
-                      disabled={isPending || isWindyDangerous}
-                      className="w-full text-white font-montserrat font-bold uppercase tracking-wider rounded-full hover:opacity-90"
-                      style={{
-                        backgroundColor: isWindyDangerous
-                          ? "#9ca3af"
-                          : "#0066FF",
-                      }}
-                      onClick={() => tap()}
-                      data-ocid="drone.submit_button"
-                    >
-                      {isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
-                          Booking...
-                        </>
-                      ) : (
-                        t("bookDelivery")
-                      )}
-                    </Button>
+                    {!identity ? (
+                      <div
+                        className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-center space-y-3"
+                        data-ocid="drone.login_state"
+                      >
+                        <p className="text-blue-800 font-medium">
+                          Login required to book
+                        </p>
+                        <p className="text-blue-600 text-sm">
+                          Securely login with Internet Identity to confirm your
+                          drone delivery
+                        </p>
+                        <Button
+                          onClick={login}
+                          disabled={isLoggingIn}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-montserrat font-bold uppercase tracking-wider rounded-full"
+                          data-ocid="drone.primary_button"
+                        >
+                          {isLoggingIn ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : null}
+                          Login with Internet Identity
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={isPending || isWindyDangerous}
+                        className="w-full text-white font-montserrat font-bold uppercase tracking-wider rounded-full hover:opacity-90"
+                        style={{
+                          backgroundColor: isWindyDangerous
+                            ? "#9ca3af"
+                            : "#0066FF",
+                        }}
+                        onClick={() => tap()}
+                        data-ocid="drone.submit_button"
+                      >
+                        {isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                            Booking...
+                          </>
+                        ) : (
+                          t("bookDelivery")
+                        )}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -1407,6 +1441,259 @@ export default function DroneDeliveryPage() {
           </Card>
         </div>
       </div>
+
+      {/* Live Tracking Tab */}
+      {activeTab === "tracking" && (
+        <div className="space-y-6">
+          <Card className="shadow-card overflow-hidden">
+            <CardHeader>
+              <CardTitle className="font-montserrat uppercase text-lg flex items-center gap-2">
+                <span>📡</span> Live Drone Tracking
+                <span className="ml-auto flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-100 border border-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-emerald-700 text-[10px] font-montserrat font-bold uppercase">
+                    Live
+                  </span>
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {/* SVG Mountain Terrain with animated drone */}
+              <div
+                className="relative bg-slate-900 overflow-hidden"
+                style={{
+                  height: 260,
+                  backgroundImage:
+                    "linear-gradient(rgba(0,102,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,102,255,0.06) 1px, transparent 1px)",
+                  backgroundSize: "30px 30px",
+                }}
+                data-ocid="drone.tracking.canvas_target"
+              >
+                <svg
+                  className="absolute inset-0 w-full h-full"
+                  viewBox="0 0 360 240"
+                  preserveAspectRatio="none"
+                  role="img"
+                  aria-label="Drone live tracking map"
+                >
+                  {/* Sky gradient */}
+                  <defs>
+                    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="0%"
+                        stopColor="rgb(10,20,50)"
+                        stopOpacity="1"
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="rgb(20,40,80)"
+                        stopOpacity="1"
+                      />
+                    </linearGradient>
+                    <linearGradient id="mtnGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="0%"
+                        stopColor="rgb(40,70,120)"
+                        stopOpacity="0.9"
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="rgb(20,40,80)"
+                        stopOpacity="1"
+                      />
+                    </linearGradient>
+                  </defs>
+                  <rect width="360" height="240" fill="url(#skyGrad)" />
+                  {/* Mountain peaks */}
+                  <polygon points="0,200 60,100 120,200" fill="url(#mtnGrad)" />
+                  <polygon
+                    points="40,200 120,60 200,200"
+                    fill="url(#mtnGrad)"
+                  />
+                  <polygon
+                    points="100,200 200,40 300,200"
+                    fill="url(#mtnGrad)"
+                    opacity="0.85"
+                  />
+                  <polygon
+                    points="200,200 300,80 360,180 360,200"
+                    fill="url(#mtnGrad)"
+                    opacity="0.7"
+                  />
+                  {/* Snow caps */}
+                  <polygon
+                    points="85,65 120,60 155,65 120,75"
+                    fill="rgba(220,230,255,0.6)"
+                  />
+                  <polygon
+                    points="165,45 200,40 235,45 200,55"
+                    fill="rgba(220,230,255,0.7)"
+                  />
+                  {/* Flight path dashed arc */}
+                  <path
+                    d="M 30 180 Q 180 40 330 160"
+                    stroke="rgba(0,120,255,0.5)"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeDasharray="8 5"
+                  />
+                  {/* Pickup pin */}
+                  <circle cx="30" cy="180" r="6" fill="#10b981" />
+                  <text
+                    x="30"
+                    y="198"
+                    textAnchor="middle"
+                    fill="#10b981"
+                    fontSize="8"
+                    fontFamily="monospace"
+                  >
+                    A
+                  </text>
+                  {/* Delivery pin */}
+                  <circle cx="330" cy="160" r="6" fill="#ef4444" />
+                  <text
+                    x="330"
+                    y="178"
+                    textAnchor="middle"
+                    fill="#ef4444"
+                    fontSize="8"
+                    fontFamily="monospace"
+                  >
+                    B
+                  </text>
+                </svg>
+
+                {/* Animated drone */}
+                <motion.div
+                  className="absolute"
+                  animate={{
+                    left: ["8%", "50%", "88%"],
+                    top: ["72%", "28%", "62%"],
+                  }}
+                  transition={{
+                    duration: 8,
+                    repeat: Number.POSITIVE_INFINITY,
+                    repeatType: "reverse",
+                    ease: "easeInOut",
+                  }}
+                  style={{ transform: "translate(-50%, -50%)" }}
+                >
+                  <div className="relative">
+                    <span className="text-3xl drop-shadow-lg select-none">
+                      🚁
+                    </span>
+                    {/* Drone glow */}
+                    <span className="absolute inset-0 rounded-full bg-blue-400/20 blur-md scale-150" />
+                  </div>
+                </motion.div>
+
+                {/* Status overlay */}
+                <div className="absolute top-3 left-3 glass-dark rounded-xl px-3 py-2">
+                  <p className="text-white font-montserrat font-black text-xs uppercase">
+                    In Flight
+                  </p>
+                  <p className="text-white/60 text-[10px]">
+                    847m · 23 km/h · ETA 8 min
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Telemetry row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              {
+                label: "Altitude",
+                value: "847m",
+                icon: "📏",
+                color: "text-blue-500",
+              },
+              {
+                label: "Speed",
+                value: "23 km/h",
+                icon: "💨",
+                color: "text-amber-500",
+              },
+              {
+                label: "ETA",
+                value: "8 min",
+                icon: "⏱️",
+                color: "text-emerald-500",
+              },
+              {
+                label: "Battery",
+                value: "78%",
+                icon: "🔋",
+                color: "text-emerald-600",
+              },
+            ].map((t) => (
+              <Card key={t.label} className="shadow-card">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl mb-1">{t.icon}</p>
+                  <p
+                    className={`font-montserrat font-black text-lg ${t.color}`}
+                  >
+                    {t.value}
+                  </p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    {t.label}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Altitude gauge + status */}
+          <Card className="shadow-card">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-6">
+                {/* Vertical altitude bar */}
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-xs text-muted-foreground">2000m</span>
+                  <div className="relative w-6 h-32 bg-muted rounded-full overflow-hidden border border-border">
+                    <motion.div
+                      className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-600 to-blue-400 rounded-full"
+                      initial={{ height: "0%" }}
+                      animate={{ height: "42%" }}
+                      transition={{ duration: 1.5, ease: "easeOut" }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">0m</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-montserrat font-black text-foreground text-lg mb-1">
+                    847m Altitude
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Flying over Kedarnath valley approach
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Payload Temp
+                      </span>
+                      <span className="text-emerald-600 font-bold">
+                        4.2°C ✓
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Wind Speed</span>
+                      <span className="text-amber-600 font-bold">14 km/h</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Signal</span>
+                      <span className="text-emerald-600 font-bold">
+                        Strong 📶
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* No-fly Zone Scan Modal */}
       <AnimatePresence>

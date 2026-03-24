@@ -15,12 +15,13 @@ import {
   Car,
   ChevronRight,
   Gift,
+  MapPin,
   Package,
   Sparkles,
   Star,
   Tag,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useHaptic } from "../hooks/useHaptic";
@@ -75,21 +76,21 @@ const blogs = [
     excerpt:
       "From Roopkund to Valley of Flowers, discover the most breathtaking trekking routes in Devbhoomi.",
     tag: "Trekking",
-    icon: "\uD83C\uDFD4\uFE0F",
+    icon: "🏔️",
   },
   {
     title: "Best Time to Visit Kedarnath",
     excerpt:
       "Plan your Kedarnath pilgrimage right. We guide you through weather patterns, crowd season, and ideal months.",
     tag: "Pilgrimage",
-    icon: "\uD83D\uDEFD",
+    icon: "🛕",
   },
   {
     title: "Nainital: A Complete Travel Guide",
     excerpt:
       "The Lake District of India. Hotels, boating, Mall Road shopping, and everything you need for a perfect trip.",
     tag: "Travel Guide",
-    icon: "\uD83C\uDF0A",
+    icon: "🌊",
   },
 ];
 
@@ -105,12 +106,66 @@ const uttarakhandLocations = [
   "Uttarkashi",
 ];
 
+const CARS = [
+  {
+    id: "hatchback",
+    emoji: "🚗",
+    label: "Hatchback",
+    price: "₹800/hr",
+    eta: "~8 min",
+  },
+  {
+    id: "sedan",
+    emoji: "🚙",
+    label: "Sedan",
+    price: "₹1200/hr",
+    eta: "~6 min",
+  },
+  { id: "suv", emoji: "🛻", label: "SUV", price: "₹1800/hr", eta: "~10 min" },
+  {
+    id: "luxury",
+    emoji: "🏎",
+    label: "Luxury",
+    price: "₹3500/hr",
+    eta: "~15 min",
+  },
+  {
+    id: "electric",
+    emoji: "⚡",
+    label: "Electric",
+    price: "₹1500/hr",
+    eta: "~12 min",
+  },
+];
+
+const TWO_WHEELERS = [
+  {
+    id: "scooty",
+    emoji: "🛵",
+    label: "Scooty",
+    price: "₹300/hr",
+    eta: "~4 min",
+  },
+  { id: "bike", emoji: "🏍", label: "Bike", price: "₹450/hr", eta: "~3 min" },
+  {
+    id: "ev-scooter",
+    emoji: "⚡🛵",
+    label: "EV Scooter",
+    price: "₹350/hr",
+    eta: "~5 min",
+  },
+];
+
 export default function LandingPage() {
   const [giftOpen, setGiftOpen] = useState(false);
   const [giftName, setGiftName] = useState("");
   const [giftPhone, setGiftPhone] = useState("");
   const [giftAmount, setGiftAmount] = useState("500");
   const [giftCode, setGiftCode] = useState("");
+  const [heroPickup, setHeroPickup] = useState("");
+  const [heroDrop, setHeroDrop] = useState("");
+  const [vehicleTab, setVehicleTab] = useState<"cars" | "two-wheelers">("cars");
+  const [selectedVehicle, setSelectedVehicle] = useState("sedan");
   const { tap, success } = useHaptic();
 
   const handleGiftSubmit = (e: React.FormEvent) => {
@@ -125,17 +180,21 @@ export default function LandingPage() {
     toast.success(`Gift voucher ${code} created!`);
   };
 
+  const vehicleList = vehicleTab === "cars" ? CARS : TWO_WHEELERS;
+
   return (
     <div className="bg-background">
-      {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+      {/* ===== HERO SECTION ===== */}
+      <section className="relative min-h-[92vh] flex items-center overflow-hidden">
         <img
           src="/assets/generated/hero-uttarakhand.dim_1400x700.jpg"
           alt="Uttarakhand Himalayas"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
-        <div className="relative container mx-auto px-4">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/40 to-black/70" />
+
+        {/* Hero Content */}
+        <div className="relative container mx-auto px-4 pb-44">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -159,7 +218,7 @@ export default function LandingPage() {
               <Link to="/book-ride">
                 <Button
                   size="lg"
-                  className="bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase tracking-wider rounded-full px-8"
+                  className="bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase tracking-wider rounded-full px-8 shadow-orange-glow"
                   data-ocid="hero.primary_button"
                   onClick={() => tap()}
                 >
@@ -192,11 +251,13 @@ export default function LandingPage() {
             </div>
           </motion.div>
         </div>
+
+        {/* Stats chips */}
         <motion.div
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="absolute bottom-12 right-8 hidden lg:flex gap-6"
+          className="absolute bottom-44 right-8 hidden lg:flex gap-6"
         >
           {[
             { label: "Destinations", value: "50+" },
@@ -205,7 +266,7 @@ export default function LandingPage() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="bg-white/15 backdrop-blur-md rounded-xl p-4 text-center text-white border border-white/20"
+              className="glass-card rounded-xl p-4 text-center text-white"
             >
               <div className="font-montserrat font-black text-2xl">
                 {stat.value}
@@ -217,106 +278,310 @@ export default function LandingPage() {
           ))}
         </motion.div>
 
-        {/* Wildlife Alert Ticker */}
-        <div className="bg-amber-500/90 text-amber-950 py-2.5 overflow-hidden border-b border-amber-600/30">
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0 pl-4 flex items-center gap-2">
-              <span className="text-lg">⚠️</span>
-              <span className="font-montserrat font-black text-xs uppercase tracking-wider">
-                Live Wildlife
-              </span>
+        {/* Glassmorphism Booking Bar — absolute bottom of hero */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.5 }}
+            className="glass-dark rounded-2xl p-4 max-w-2xl mx-auto shadow-glass"
+          >
+            <div className="flex flex-col sm:flex-row gap-3 mb-3">
+              <div className="flex items-center gap-2 flex-1 bg-white/10 rounded-xl px-3 py-2.5">
+                <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <input
+                  type="text"
+                  className="bg-transparent text-white placeholder-white/50 text-sm flex-1 outline-none"
+                  placeholder="📍 Pickup location..."
+                  value={heroPickup}
+                  onChange={(e) => setHeroPickup(e.target.value)}
+                  data-ocid="hero.input"
+                />
+              </div>
+              <div className="flex items-center gap-2 flex-1 bg-white/10 rounded-xl px-3 py-2.5">
+                <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <input
+                  type="text"
+                  className="bg-transparent text-white placeholder-white/50 text-sm flex-1 outline-none"
+                  placeholder="📍 Drop location..."
+                  value={heroDrop}
+                  onChange={(e) => setHeroDrop(e.target.value)}
+                  data-ocid="hero.input"
+                />
+              </div>
             </div>
-            <div className="overflow-hidden flex-1">
-              <motion.div
-                animate={{ x: ["100%", "-200%"] }}
-                transition={{
-                  repeat: Number.POSITIVE_INFINITY,
-                  duration: 22,
-                  ease: "linear",
-                }}
-                className="whitespace-nowrap text-xs font-medium"
+            <Link to="/book-ride">
+              <button
+                type="button"
+                className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase tracking-wider text-sm rounded-xl py-2.5 transition-all flex items-center justify-center gap-2 shadow-orange-glow"
+                data-ocid="hero.submit_button"
+                onClick={() => tap()}
               >
-                🐆 Leopard spotted near Corbett Buffer Zone (2h
-                ago)&nbsp;&nbsp;·&nbsp;&nbsp;🐻 Bear sighting on Chopta-Tungnath
-                trail (4h ago)&nbsp;&nbsp;·&nbsp;&nbsp;🦅 Musk Deer crossing at
-                Kedarnath (1h ago)&nbsp;&nbsp;·&nbsp;&nbsp;🐆 Snow Leopard near
-                Milam Glacier (6h ago)&nbsp;&nbsp;·&nbsp;&nbsp;🐘 Wild Elephant
-                at Rajaji NP entry (30min ago)
-              </motion.div>
-            </div>
-          </div>
+                🚗 Book a Ride <ArrowRight className="w-4 h-4" />
+              </button>
+            </Link>
+          </motion.div>
         </div>
-
-        {/* AI Safety Score Strip */}
-        <section className="py-8 bg-background border-b border-border">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-montserrat font-extrabold uppercase text-sm text-foreground">
-                🛡️ AI Road Health Scores
-              </h3>
-              <Link to="/safety-hub">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-primary text-xs font-montserrat font-bold uppercase"
-                  data-ocid="safety_strip.link"
-                >
-                  View All →
-                </Button>
-              </Link>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {[
-                {
-                  route: "Rishikesh→Badrinath",
-                  score: 78,
-                  status: "Caution",
-                  color: "amber",
-                },
-                {
-                  route: "Nainital→Almora",
-                  score: 91,
-                  status: "Clear",
-                  color: "emerald",
-                },
-                {
-                  route: "Kedarnath Route",
-                  score: 42,
-                  status: "Danger",
-                  color: "red",
-                },
-              ].map((r) => (
-                <div
-                  key={r.route}
-                  className="flex-shrink-0 bg-card rounded-xl border border-border p-3 min-w-[160px]"
-                >
-                  <p className="font-montserrat font-bold text-xs text-foreground mb-1">
-                    {r.route}
-                  </p>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="flex-1 bg-muted rounded-full h-1.5">
-                      <div
-                        className={`h-1.5 rounded-full ${r.color === "emerald" ? "bg-emerald-500" : r.color === "amber" ? "bg-amber-500" : "bg-red-500"}`}
-                        style={{ width: `${r.score}%` }}
-                      />
-                    </div>
-                    <span className="font-black text-xs text-foreground">
-                      {r.score}
-                    </span>
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${r.color === "emerald" ? "bg-emerald-100 text-emerald-700" : r.color === "amber" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}
-                  >
-                    {r.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
       </section>
 
-      {/* Booking Widget + Drone Promo */}
+      {/* ===== WILDLIFE ALERT TICKER (sibling) ===== */}
+      <div className="bg-amber-500/95 text-amber-950 py-2.5 overflow-hidden border-b border-amber-600/30">
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0 pl-4 flex items-center gap-2">
+            <span className="text-lg">⚠️</span>
+            <span className="font-montserrat font-black text-xs uppercase tracking-wider">
+              Live Wildlife
+            </span>
+          </div>
+          <div className="overflow-hidden flex-1">
+            <motion.div
+              animate={{ x: ["100%", "-200%"] }}
+              transition={{
+                repeat: Number.POSITIVE_INFINITY,
+                duration: 22,
+                ease: "linear",
+              }}
+              className="whitespace-nowrap text-xs font-medium"
+            >
+              🐆 Leopard spotted near Corbett Buffer Zone (2h
+              ago)&nbsp;&nbsp;·&nbsp;&nbsp;🐻 Bear sighting on Chopta-Tungnath
+              trail (4h ago)&nbsp;&nbsp;·&nbsp;&nbsp;🦅 Musk Deer crossing at
+              Kedarnath (1h ago)&nbsp;&nbsp;·&nbsp;&nbsp;🐆 Snow Leopard near
+              Milam Glacier (6h ago)&nbsp;&nbsp;·&nbsp;&nbsp;🐘 Wild Elephant at
+              Rajaji NP entry (30min ago)
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== WEATHER ALERTS TICKER (sibling) ===== */}
+      <div className="bg-blue-700/95 text-white py-2.5 overflow-hidden border-b border-blue-600/30">
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0 pl-4 flex items-center gap-2">
+            <span className="text-lg">🌦️</span>
+            <span className="font-montserrat font-black text-xs uppercase tracking-wider">
+              Weather
+            </span>
+          </div>
+          <div className="overflow-hidden flex-1">
+            <motion.div
+              animate={{ x: ["100%", "-200%"] }}
+              transition={{
+                repeat: Number.POSITIVE_INFINITY,
+                duration: 26,
+                ease: "linear",
+              }}
+              className="whitespace-nowrap text-xs font-medium text-white/90"
+            >
+              🌧️ Heavy rain warning on Rishikesh→Badrinath
+              corridor&nbsp;&nbsp;·&nbsp;&nbsp;⚠️ Landslide risk at Kedarnath
+              approach — drive with caution&nbsp;&nbsp;·&nbsp;&nbsp;🌨️ Snow alert
+              above 2500m near Chopta — chains
+              required&nbsp;&nbsp;·&nbsp;&nbsp;🌫️ Dense fog on Mussoorie–Dehradun
+              highway till 9AM&nbsp;&nbsp;·&nbsp;&nbsp;⛈️ Thunderstorm advisory
+              for Nainital district
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== AI ROAD HEALTH STRIP (sibling) ===== */}
+      <section className="py-8 bg-background border-b border-border">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-montserrat font-extrabold uppercase text-sm text-foreground">
+              🛡️ AI Road Health Scores
+            </h3>
+            <Link to="/safety-hub">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary text-xs font-montserrat font-bold uppercase"
+                data-ocid="safety_strip.link"
+              >
+                View All →
+              </Button>
+            </Link>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {[
+              {
+                route: "Rishikesh→Badrinath",
+                score: 78,
+                status: "Caution",
+                color: "amber",
+              },
+              {
+                route: "Nainital→Almora",
+                score: 91,
+                status: "Clear",
+                color: "emerald",
+              },
+              {
+                route: "Kedarnath Route",
+                score: 42,
+                status: "Danger",
+                color: "red",
+              },
+              {
+                route: "Mussoorie→Tehri",
+                score: 85,
+                status: "Clear",
+                color: "emerald",
+              },
+            ].map((r) => (
+              <div
+                key={r.route}
+                className="flex-shrink-0 bg-card rounded-xl border border-border p-3 min-w-[160px] shadow-card"
+              >
+                <p className="font-montserrat font-bold text-xs text-foreground mb-1">
+                  {r.route}
+                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 bg-muted rounded-full h-1.5">
+                    <div
+                      className={`h-1.5 rounded-full ${
+                        r.color === "emerald"
+                          ? "bg-emerald-500"
+                          : r.color === "amber"
+                            ? "bg-amber-500"
+                            : "bg-red-500"
+                      }`}
+                      style={{ width: `${r.score}%` }}
+                    />
+                  </div>
+                  <span className="font-black text-xs text-foreground">
+                    {r.score}
+                  </span>
+                </div>
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    r.color === "emerald"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : r.color === "amber"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {r.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== VEHICLE SELECTION CAROUSEL (NEW) ===== */}
+      <section className="py-16 bg-muted border-b border-border">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-8"
+          >
+            <p className="text-primary font-montserrat font-bold uppercase tracking-[0.25em] text-xs mb-2">
+              Choose Your Ride
+            </p>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <h2 className="font-montserrat font-extrabold uppercase text-3xl text-foreground">
+                Select a Vehicle
+              </h2>
+              {/* Tabs */}
+              <div className="flex gap-2 bg-card rounded-full p-1 border border-border shadow-card">
+                {(["cars", "two-wheelers"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => {
+                      tap();
+                      setVehicleTab(tab);
+                      setSelectedVehicle(tab === "cars" ? "sedan" : "scooty");
+                    }}
+                    className={`px-5 py-2 rounded-full text-xs font-montserrat font-bold uppercase transition-all ${
+                      vehicleTab === tab
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    data-ocid={`vehicles.${tab}.tab`}
+                  >
+                    {tab === "cars" ? "🚗 Cars" : "🛵 Two Wheelers"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Vehicle Cards Carousel */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={vehicleTab}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="flex gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-4 xl:grid-cols-5 md:overflow-visible"
+            >
+              {vehicleList.map((v, i) => (
+                <motion.div
+                  key={v.id}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.07 }}
+                  onClick={() => {
+                    tap();
+                    setSelectedVehicle(v.id);
+                  }}
+                  className={`flex-shrink-0 w-36 md:w-auto cursor-pointer rounded-2xl border-2 p-4 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-card ${
+                    selectedVehicle === v.id
+                      ? "border-primary bg-primary/8 shadow-glass"
+                      : "border-border bg-card"
+                  }`}
+                  data-ocid={`vehicles.item.${i + 1}`}
+                >
+                  <div className="text-5xl mb-3 select-none">{v.emoji}</div>
+                  <p className="font-montserrat font-black text-sm text-foreground uppercase tracking-wide">
+                    {v.label}
+                  </p>
+                  <p className="font-jakarta font-semibold text-primary text-sm mt-1">
+                    {v.price}
+                  </p>
+                  <span className="inline-block mt-2 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">
+                    {v.eta}
+                  </span>
+                  {selectedVehicle === v.id && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="mt-2 w-5 h-5 rounded-full bg-primary mx-auto flex items-center justify-center"
+                    >
+                      <span className="text-white text-[10px] font-black">
+                        ✓
+                      </span>
+                    </motion.div>
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="mt-8 text-center">
+            <Link to="/book-ride">
+              <Button
+                size="lg"
+                className="bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase tracking-wider rounded-full px-10 shadow-orange-glow"
+                data-ocid="vehicles.primary_button"
+                onClick={() => tap()}
+              >
+                Book Selected Vehicle <ChevronRight className="ml-1 w-5 h-5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== BOOKING WIDGET + DRONE PROMO ===== */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-8">
@@ -421,7 +686,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Destinations */}
+      {/* ===== DESTINATIONS ===== */}
       <section className="py-16 bg-muted">
         <div className="container mx-auto px-4">
           <motion.div
@@ -465,14 +730,14 @@ export default function LandingPage() {
           </div>
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Also serving: {uttarakhandLocations.slice(0, 6).join(" \u00B7")}{" "}
-              and more
+              Also serving: {uttarakhandLocations.slice(0, 6).join(" · ")} and
+              more
             </p>
           </div>
         </div>
       </section>
 
-      {/* Travel Blogs */}
+      {/* ===== TRAVEL BLOGS ===== */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <motion.div
@@ -527,7 +792,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* ===== TESTIMONIALS ===== */}
       <section className="py-16 bg-muted">
         <div className="container mx-auto px-4">
           <motion.div
@@ -575,46 +840,46 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-
-        {/* AI Concierge CTA */}
-        <section className="py-16 bg-gradient-to-r from-purple-900 via-indigo-900 to-brand-blue-dark">
-          <div className="container mx-auto px-4 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <div className="w-14 h-14 rounded-full bg-purple-500/20 border border-purple-400/40 flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-7 h-7 text-purple-300" />
-              </div>
-              <p className="text-purple-300 font-montserrat font-bold uppercase tracking-[0.25em] text-xs mb-2">
-                AI POWERED
-              </p>
-              <h2 className="font-montserrat font-black uppercase text-white text-3xl md:text-4xl mb-4">
-                Plan by Vibe,
-                <br />
-                Not Just Destination
-              </h2>
-              <p className="text-white/70 mb-8 max-w-xl mx-auto">
-                Tell our AI your mood — misty retreat, adventure, pilgrimage, or
-                food trail — and get a personalised 3-day Uttarakhand itinerary
-                in seconds.
-              </p>
-              <Link to="/ai-concierge">
-                <Button
-                  size="lg"
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-montserrat font-bold uppercase tracking-wider rounded-full px-8"
-                  data-ocid="ai_cta.primary_button"
-                >
-                  <Sparkles className="mr-2 w-4 h-4" /> Chat with AI Concierge
-                </Button>
-              </Link>
-            </motion.div>
-          </div>
-        </section>
       </section>
 
-      {/* CTA Banner */}
+      {/* ===== AI CONCIERGE CTA (SIBLING — not nested in testimonials) ===== */}
+      <section className="py-16 bg-gradient-to-r from-purple-900 via-indigo-900 to-brand-blue-dark">
+        <div className="container mx-auto px-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="w-14 h-14 rounded-full bg-purple-500/20 border border-purple-400/40 flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-7 h-7 text-purple-300" />
+            </div>
+            <p className="text-purple-300 font-montserrat font-bold uppercase tracking-[0.25em] text-xs mb-2">
+              AI POWERED
+            </p>
+            <h2 className="font-montserrat font-black uppercase text-white text-3xl md:text-4xl mb-4">
+              Plan by Vibe,
+              <br />
+              Not Just Destination
+            </h2>
+            <p className="text-white/70 mb-8 max-w-xl mx-auto">
+              Tell our AI your mood — misty retreat, adventure, pilgrimage, or
+              food trail — and get a personalised 3-day Uttarakhand itinerary in
+              seconds.
+            </p>
+            <Link to="/ai-concierge">
+              <Button
+                size="lg"
+                className="bg-purple-600 hover:bg-purple-700 text-white font-montserrat font-bold uppercase tracking-wider rounded-full px-8"
+                data-ocid="ai_cta.primary_button"
+              >
+                <Sparkles className="mr-2 w-4 h-4" /> Chat with AI Concierge
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ===== CTA BANNER ===== */}
       <section className="py-20 bg-brand-blue">
         <div className="container mx-auto px-4 text-center">
           <motion.div
@@ -633,7 +898,7 @@ export default function LandingPage() {
               <Link to="/book-ride">
                 <Button
                   size="lg"
-                  className="bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase tracking-wider rounded-full px-8"
+                  className="bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase tracking-wider rounded-full px-8 shadow-orange-glow"
                   data-ocid="cta.primary_button"
                   onClick={() => tap()}
                 >
@@ -656,7 +921,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Gift a Ride Modal */}
+      {/* ===== GIFT A RIDE MODAL ===== */}
       <Dialog open={giftOpen} onOpenChange={setGiftOpen}>
         <DialogContent className="sm:max-w-sm" data-ocid="gift.dialog">
           <DialogHeader>
@@ -723,7 +988,7 @@ export default function LandingPage() {
                 >
                   {["500", "1000", "1500", "2000"].map((a) => (
                     <option key={a} value={a}>
-                      \u20B9{a}
+                      ₹{a}
                     </option>
                   ))}
                 </select>

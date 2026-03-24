@@ -1,41 +1,45 @@
-# PITTHU - Smart Travel & Safety + 3D Seat Selection Upgrade
+# PITTHU — Full UI Overhaul (Version 6)
 
 ## Current State
-PITTHU is a full Uttarakhand travel/drone booking app with 50+ features across 5 modules. It has a persistent bottom nav, Book Ride page with basic SeatSelector component (flat grid), Drone Delivery page, Profile, Admin, Trip Tracking, Leaderboard pages. The SeatSelector is a simple colored grid with no vehicle shape or realistic styling.
+PITTHU v5 is a fully functional multi-modal travel + drone delivery app for Uttarakhand with:
+- LandingPage, BookRidePage, DroneDeliveryPage, TripTrackingPage, SafetyHubPage, AIConciergePage, ProfilePage, MyBookingsPage, AdminPage, LeaderboardPage
+- Persistent bottom navigation, header, dark mode, language toggle
+- Backend: booking creation via Internet Identity auth
+- Design: blue (#primary) + orange (brand-orange) palette, Montserrat headings, card-based layouts
+- Known issues: LandingPage has nesting bugs (sections inside sections), wildlife ticker overlaps hero, some cards lack visual polish
 
 ## Requested Changes (Diff)
 
 ### Add
-- **Smart Safety Hub page** (`/safety-hub`): Dashboard showing AI Road-Condition score per route ("Heavy slush at Khairna Bend"), Landslide Predictor with 2-hour warning zones, Dynamic Pahadi ETA (torque-based), Wildlife Alert feed (leopard/bear sightings), Offline Voice Nav dialect selector (Kumaoni/Garhwali toggle UI), Smart Group-Pooling matcher for remote temples.
-- **AI Concierge page** (`/ai-concierge`): Trip Architect chatbot (vibe-based: "quiet mist and local food"), Multi-Modal Hub suggester (car → drone → mule), Permit Manager (scan ID, auto-apply), Battery-Drain Predictor widget, Memory Drone booking CTA, Curviness Filter (Scenic/Curvy vs Fast/Tunnel).
-- **Drone Advanced page enhancements on `/drone-delivery`**: Follow My Trek Delivery mode, Reverse Logistics (Sample Collection) mode, Aarti Streaming mode, Payload Temperature AI widget, Precision Landing SLAM UI with targeting animation. Local Bazaar section (buy Pahadi daal/topis). Emergency Medicine-First mode toggle.
-- **3D Realistic Seat Selector** — complete replacement of `SeatSelector.tsx`: 
-  - Realistic top-view SVG vehicle shape (car/SUV for private, minibus for shared, full bus for bus)
-  - Car: shows bonnet, windscreen, body outline, 4-5 seats arranged as per real car layout (front 2 seats including driver, rear bench 3 seats)
-  - Bus: detailed top-view with roof outline, windows along sides, steering wheel at front, seats in 2+2 arrangement per row, aisle clearly visible
-  - Seats are color-coded (available/selected/taken) with proper orientation and seat-back detail
-  - "Row" labels on side, seat numbers inside each seat shape (oval/rectangular)
-  - Animated seat selection with spring bounce
-  - Legend below map
-- Add Safety Hub and AI Concierge to bottom nav (or under a 'More' menu or as prominent cards on Home)
-- Wildlife Alert widget on LandingPage hero section
-- Add route for `/safety-hub` and `/ai-concierge` in App.tsx
+- Vehicle selection carousel on LandingPage (Cars: Hatchback, Sedan, SUV, Luxury, Electric; Two Wheelers: Scooty, Bike, EV Scooter) with price + ETA chips
+- Quick booking bar (pickup + drop inputs) directly on the hero section
+- Glassmorphism hero card overlaying the hero image with the booking bar
+- Weather alerts strip (rain, landslide) as a dedicated banner component
+- Map/tracking visual mockup screen with route preview, driver ETA pin, live tracking dots
+- Voice booking UI button (mic icon with ripple animation) on BookRidePage
+- Drone delivery live tracking screen with animated drone path
+- Payment screen UI: UPI (GPay, PhonePe, Paytm), Cash, Wallet with fare breakdown
+- Safety features prominent section: SOS emergency button, Share Trip CTA, Driver badge
 
 ### Modify
-- `SeatSelector.tsx`: Full redesign to realistic top-view vehicle plan
-- `BookRidePage.tsx`: Use new SeatSelector, add Pahadi ETA display, Curviness Filter toggle, Last-Mile Porter auto-trigger notice
-- `LandingPage.tsx`: Add Wildlife Alert strip, AI Safety score for top routes, AI Concierge CTA section
-- `BottomNav.tsx`: Add Safety and AI links or a 'More' overflow
+- LandingPage: fix section nesting bug, make hero fullscreen mobile-first, add glassmorphism booking bar overlay on hero
+- LandingPage: restructure sections in correct DOM order (wildlife ticker → hero stats → booking widget → vehicle carousel → destinations → testimonials → blogs → CTA)
+- BookRidePage: add vehicle type carousel (car variants + two-wheelers) replacing plain ride type selector
+- index.css: elevate design tokens for stronger blue-orange gradient feel, richer glassmorphism shadows
+- BottomNav: ensure consistent active state, smooth transitions
+- All Cards: apply consistent glassmorphism style with backdrop-blur and subtle gradient borders
 
 ### Remove
-- Nothing removed
+- No features removed
 
 ## Implementation Plan
-1. Create `src/components/RealisticSeatSelector.tsx` - full SVG-based top-view vehicle with realistic shapes for car, minibus, bus modes
-2. Create `src/pages/SafetyHubPage.tsx` - AI road scores, landslide warnings, wildlife alerts, group pooling, dialect nav toggle
-3. Create `src/pages/AIConciergePage.tsx` - chatbot UI, trip architect, permit manager, battery predictor, multi-modal hubs
-4. Update `DroneDeliveryPage.tsx` - add Follow My Trek, Reverse Logistics, Aarti Streaming, Payload Temp, Medicine-First, Local Bazaar tabs/sections
-5. Update `BookRidePage.tsx` - swap SeatSelector with RealisticSeatSelector, add Pahadi ETA, curviness filter
-6. Update `LandingPage.tsx` - wildlife alert strip, safety score cards, AI Concierge CTA
-7. Update `App.tsx` - add routes for safety-hub and ai-concierge
-8. Update `BottomNav.tsx` - add links to new pages
+1. Fix LandingPage section nesting (sections nested inside sections) — structural cleanup
+2. Redesign LandingPage hero with glassmorphism booking bar overlay (pickup + drop + Book Ride CTA)
+3. Add vehicle selection carousel to LandingPage with all 8 vehicle types, price + ETA
+4. Add weather alerts component (rain/landslide) below hero stats
+5. Redesign BookRidePage ride-type selector as a visual vehicle carousel
+6. Add voice booking mic button (animated) to BookRidePage
+7. Enhance PaymentScreen within BookRidePage with UPI/Cash/Wallet tabs + fare breakdown
+8. Add SOS + Share Trip buttons to TripTrackingPage and BookRidePage summary
+9. Update index.css with richer glassmorphism tokens and blue-orange gradient system
+10. Ensure all pages are mobile-first with proper spacing and typography

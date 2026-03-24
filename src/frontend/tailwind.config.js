@@ -18,6 +18,7 @@ export default {
       fontFamily: {
         montserrat: ['Montserrat', 'sans-serif'],
         inter: ['Inter', 'sans-serif'],
+        jakarta: ['Plus Jakarta Sans', 'sans-serif'],
       },
       colors: {
         border: "oklch(var(--border))",
@@ -85,8 +86,10 @@ export default {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0,0,0,0.05)",
-        card: "0 4px 24px rgba(11,61,107,0.12)",
-        hero: "0 8px 48px rgba(11,61,107,0.3)",
+        card: "0 4px 24px rgba(0,0,50,0.08)",
+        glass: "0 8px 32px rgba(0,0,50,0.18), inset 0 1px 0 rgba(255,255,255,0.2)",
+        hero: "0 20px 60px rgba(0,0,50,0.25)",
+        "orange-glow": "0 4px 20px rgba(235,120,30,0.35)",
       },
       keyframes: {
         "accordion-down": {
