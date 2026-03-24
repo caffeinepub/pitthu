@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { Menu, Mountain, User, X } from "lucide-react";
+import { Menu, Moon, Mountain, Sun, User, X } from "lucide-react";
 import { useState } from "react";
+import { useLanguage } from "../contexts/LanguageContext";
+import { useTheme } from "../contexts/ThemeContext";
+import NotificationCenter from "./NotificationCenter";
 
 const navLinks = [
-  { label: "Explore", href: "/" },
+  { labelKey: "home" as const, href: "/" },
   { label: "Ride Booking", href: "/book-ride" },
   { label: "Drone Delivery", href: "/drone-delivery" },
   { label: "My Bookings", href: "/my-bookings" },
@@ -12,6 +15,8 @@ const navLinks = [
 
 export default function Header({ overlay = false }: { overlay?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const { lang, toggleLang, t } = useLanguage();
 
   return (
     <header
@@ -39,26 +44,58 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
               className="text-white/85 hover:text-white font-montserrat text-sm uppercase tracking-wider transition-colors"
               data-ocid="nav.link"
             >
-              {link.label}
+              {link.label || t(link.labelKey!)}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Lang toggle */}
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="hidden md:flex items-center text-white/80 hover:text-white font-montserrat text-xs uppercase tracking-wider transition-colors px-2"
+            data-ocid="header.toggle"
+            aria-label="Toggle language"
+          >
+            {lang === "en" ? "हिं" : "EN"}
+          </button>
+
+          {/* Theme toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+            data-ocid="header.toggle"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-4 h-4" />
+            ) : (
+              <Moon className="w-4 h-4" />
+            )}
+          </button>
+
+          {/* Notifications */}
+          <NotificationCenter />
+
           <Link to="/book-ride">
             <Button
               className="hidden md:flex bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase tracking-wider text-xs rounded-full px-5"
               data-ocid="nav.primary_button"
             >
-              Book Now
+              {t("bookNow")}
             </Button>
           </Link>
-          <button
-            type="button"
-            className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-          >
-            <User className="w-4 h-4" />
-          </button>
+          <Link to="/profile">
+            <button
+              type="button"
+              className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              aria-label="Profile"
+            >
+              <User className="w-4 h-4" />
+            </button>
+          </Link>
           <button
             type="button"
             className="md:hidden text-white"
@@ -83,12 +120,34 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
               onClick={() => setMobileOpen(false)}
               data-ocid="nav.link"
             >
-              {link.label}
+              {link.label || t(link.labelKey!)}
             </Link>
           ))}
+          <div className="flex items-center gap-3 mt-3">
+            <button
+              type="button"
+              onClick={toggleLang}
+              className="text-white/80 font-montserrat text-xs uppercase tracking-wider"
+              data-ocid="header.toggle"
+            >
+              {lang === "en" ? "हिं" : "EN"}
+            </button>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="text-white/80 hover:text-white"
+              data-ocid="header.toggle"
+            >
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
+            </button>
+          </div>
           <Link to="/book-ride" onClick={() => setMobileOpen(false)}>
             <Button className="mt-2 w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase text-xs rounded-full">
-              Book Now
+              {t("bookNow")}
             </Button>
           </Link>
         </div>
