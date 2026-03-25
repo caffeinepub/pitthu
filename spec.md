@@ -1,30 +1,38 @@
-# PITTHU - Real Earning System
+# PITTHU
 
 ## Current State
-- Bookings stored with a `fare` field (total fare, no breakdown)
-- AdminPage shows fare as a single number
-- BookRidePage shows a fare breakdown (base fare, mountain surcharge, promo, pool split) but no platform commission or convenience fee
-- No earningsStorage utility; no admin/driver earnings tracking
-- AdminPage has no Earnings tab
+
+A driver system already exists with:
+- Login page (`/login`) with Rider/Driver tabs; driver tab sets role to `driver` and redirects to `/driver-dashboard`
+- `DriverDashboardPage.tsx` shows pending bookings (Available tab) and active rides (My Rides tab) with accept/reject, start ride, complete ride actions
+- `bookingStorage.ts` handles status transitions: pending → accepted → ongoing → completed
+- `userStorage.ts` stores roles; driver role assigned on Driver tab login
 
 ## Requested Changes (Diff)
 
 ### Add
-- `earningsStorage.ts` — utility to store/read admin and driver earnings per booking
-- `commissionFee` (15% of base fare before surcharges) and `convenienceFee` (₹10 flat) to `StoredBooking`
-- `driverEarnings` (fare - commission - convenience fee) and `adminEarnings` (commission + convenience fee) fields on booking
-- Earnings Dashboard tab in AdminPage: total admin revenue, per-booking breakdown, driver payouts
+- Auto-refresh polling every 8 seconds for new bookings (no more stale list without manual refresh)
+- Completed rides tab showing finished rides with earnings summary
+- Driver-only guard: redirect to `/login` if user is not logged in or not a driver/admin
+- Booking count badge on header showing live pending rides count
+- Storage event listener for cross-tab sync (booking created in another tab instantly appears)
+- Online/Offline status toggle for driver (when offline, driver won't see new rides)
 
 ### Modify
-- `bookingStorage.ts` — add `commissionFee`, `convenienceFee`, `driverEarnings`, `adminEarnings` to `StoredBooking` interface
-- `BookRidePage.tsx` — compute commission (15% of finalFare) and ₹10 convenience fee, show in fare breakdown, pass to `saveBooking`
-- `AdminPage.tsx` — add Earnings tab with summary cards (total revenue, commissions, driver payouts) and per-booking earnings rows
+- `loadBookings` to also load completed bookings for the new completed tab
+- Stats card: make "Today" earning calculate from completed bookings of current session
+- "My Rides" tab to show accepted + ongoing only (not completed, which goes to new tab)
 
 ### Remove
-- Nothing
+- Nothing removed
 
 ## Implementation Plan
-1. Update `bookingStorage.ts`: add earnings fields to StoredBooking interface
-2. Create `earningsStorage.ts`: helpers to compute totals from all bookings
-3. Update `BookRidePage.tsx`: calculate commission=15% of finalFare, convenienceFee=₹10, driverPayout=finalFare-commission-convenienceFee; show in fare breakdown UI; pass all fields to saveBooking
-4. Update `AdminPage.tsx`: add Earnings tab with revenue summary cards and per-booking breakdown table
+
+1. In `DriverDashboardPage.tsx`:
+   - Add `useEffect` interval (8s) for auto-refresh + `storage` event listener for cross-tab updates
+   - Add `completedBookings` state filtered to `status === "completed"`
+   - Add driver guard: check `user` from `useAuth`, if not present or `user.role` not `driver`/`admin`, redirect to `/login`
+   - Add three tabs: `available`, `myrides`, `completed`
+   - Calculate today's earnings from `completedBookings` (sum of `driverEarnings` or `fare * 0.85`)
+   - Add online/offline toggle switch with `isOnline` state; when offline hide new pending bookings from available list
+2. No backend or routing changes needed
