@@ -298,7 +298,7 @@ export default function DroneDeliveryPage() {
     <div className="min-h-screen bg-muted">
       <div className="relative bg-brand-blue-dark py-16 overflow-hidden">
         <img
-          src="/assets/generated/drone-delivery-promo.dim_600x400.jpg"
+          src="/assets/generated/drone-real-delivery.dim_600x400.jpg"
           alt="Drone"
           className="absolute inset-0 w-full h-full object-cover opacity-20"
         />

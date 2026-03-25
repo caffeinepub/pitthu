@@ -552,13 +552,13 @@ export default function BookRidePage() {
                     {[
                       {
                         type: "private" as RideType,
-                        img: "/assets/generated/vehicle-innova.dim_400x280.jpg",
+                        img: "/assets/generated/vehicle-private-car.dim_400x280.jpg",
                         label: "Private Car",
                         eta: "~8 min",
                       },
                       {
                         type: "shared" as RideType,
-                        img: "/assets/generated/vehicle-swift.dim_400x280.jpg",
+                        img: "/assets/generated/vehicle-shared-cab.dim_400x280.jpg",
                         label: "Shared Cab",
                         eta: "~5 min",
                       },
