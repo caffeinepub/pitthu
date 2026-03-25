@@ -133,7 +133,7 @@ export default function BookRidePage() {
   const finalFare = rideMode === "pool" ? poolFare : estimatedPrice;
   const commissionFee = Math.round(finalFare * 0.15);
   const convenienceFee = 10;
-  const driverPayout = finalFare - commissionFee - convenienceFee;
+  const driverPayout = finalFare - commissionFee;
   const totalPayable = finalFare + convenienceFee;
   const sameLocation = from && to && from === to;
   const dateStr = date ? format(date, "dd MMM yyyy") : "";
@@ -198,7 +198,7 @@ export default function BookRidePage() {
     try {
       saveBooking({
         bookingId: newBookingId,
-        userId: user?.phone || "guest",
+        userId: user?.userId || "guest",
         userName:
           user?.name ||
           localStorage.getItem("pitthu-name") ||

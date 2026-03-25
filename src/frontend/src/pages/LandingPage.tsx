@@ -134,7 +134,7 @@ const CARS: Vehicle[] = [
   },
   {
     id: "swift",
-    img: "/assets/generated/vehicle-baleno.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-swift.dim_400x280.jpg",
     label: "Swift",
     price: "₹850/hr",
     eta: "~6 min",
@@ -142,7 +142,7 @@ const CARS: Vehicle[] = [
   },
   {
     id: "wagonr",
-    img: "/assets/generated/vehicle-alto.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-wagonr.dim_400x280.jpg",
     label: "WagonR",
     price: "₹800/hr",
     eta: "~7 min",
@@ -150,7 +150,7 @@ const CARS: Vehicle[] = [
   },
   {
     id: "hatchback",
-    img: "/assets/generated/vehicle-alto.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-hatchback.dim_400x280.jpg",
     label: "Hatchback",
     price: "₹800/hr",
     eta: "~8 min",
@@ -158,7 +158,7 @@ const CARS: Vehicle[] = [
   },
   {
     id: "sedan",
-    img: "/assets/generated/vehicle-baleno.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-sedan.dim_400x280.jpg",
     label: "Sedan",
     price: "₹1200/hr",
     eta: "~6 min",
@@ -174,7 +174,7 @@ const CARS: Vehicle[] = [
   },
   {
     id: "luxury",
-    img: "/assets/generated/vehicle-innova.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-luxury-car.dim_400x280.jpg",
     label: "Luxury",
     price: "₹3500/hr",
     eta: "~15 min",
@@ -182,7 +182,7 @@ const CARS: Vehicle[] = [
   },
   {
     id: "electric",
-    img: "/assets/generated/vehicle-ev-scooter.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-electric-car.dim_400x280.jpg",
     label: "Electric",
     price: "₹1500/hr",
     eta: "~12 min",
@@ -201,7 +201,7 @@ const TWO_WHEELERS: Vehicle[] = [
   },
   {
     id: "scooty",
-    img: "/assets/generated/vehicle-activa.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-scooty.dim_400x280.jpg",
     label: "Scooty",
     price: "₹280/hr",
     eta: "~4 min",
@@ -209,7 +209,7 @@ const TWO_WHEELERS: Vehicle[] = [
   },
   {
     id: "bullet",
-    img: "/assets/generated/vehicle-bullet.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-bullet350.dim_400x280.jpg",
     label: "Bullet 350",
     price: "₹500/hr",
     eta: "~3 min",
@@ -217,7 +217,7 @@ const TWO_WHEELERS: Vehicle[] = [
   },
   {
     id: "bike",
-    img: "/assets/generated/vehicle-bullet.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-bike.dim_400x280.jpg",
     label: "Bike",
     price: "₹450/hr",
     eta: "~3 min",
@@ -225,11 +225,30 @@ const TWO_WHEELERS: Vehicle[] = [
   },
   {
     id: "ev-scooter",
-    img: "/assets/generated/vehicle-ev-scooter.dim_400x280.jpg",
+    img: "/assets/generated/vehicle-ev-scooter2.dim_400x280.jpg",
     label: "EV Scooter",
     price: "₹350/hr",
     eta: "~5 min",
     badge: "EV",
+  },
+];
+
+const BUSES: Vehicle[] = [
+  {
+    id: "mini-bus",
+    img: "/assets/generated/vehicle-mini-bus.dim_400x280.jpg",
+    label: "Mini Bus",
+    price: "₹400/hr",
+    eta: "~15 min",
+    badge: "Shared",
+  },
+  {
+    id: "luxury-bus",
+    img: "/assets/generated/vehicle-luxury-bus.dim_400x280.jpg",
+    label: "Luxury Bus",
+    price: "₹800/hr",
+    eta: "~20 min",
+    badge: "Premium",
   },
 ];
 
@@ -241,7 +260,9 @@ export default function LandingPage() {
   const [giftCode, setGiftCode] = useState("");
   const [heroPickup, setHeroPickup] = useState("");
   const [heroDrop, setHeroDrop] = useState("");
-  const [vehicleTab, setVehicleTab] = useState<"cars" | "two-wheelers">("cars");
+  const [vehicleTab, setVehicleTab] = useState<
+    "cars" | "two-wheelers" | "buses"
+  >("cars");
   const [selectedVehicle, setSelectedVehicle] = useState("alto");
   const { tap, success } = useHaptic();
 
@@ -257,7 +278,12 @@ export default function LandingPage() {
     toast.success(`Gift voucher ${code} created!`);
   };
 
-  const vehicleList = vehicleTab === "cars" ? CARS : TWO_WHEELERS;
+  const vehicleList =
+    vehicleTab === "cars"
+      ? CARS
+      : vehicleTab === "buses"
+        ? BUSES
+        : TWO_WHEELERS;
 
   return (
     <div className="bg-background">
@@ -566,14 +592,26 @@ export default function LandingPage() {
               </h2>
               {/* Tabs */}
               <div className="flex gap-2 bg-card rounded-full p-1 border border-border shadow-card">
-                {(["cars", "two-wheelers"] as const).map((tab) => (
+                {(
+                  ["cars", "two-wheelers", "buses"] as (
+                    | "cars"
+                    | "two-wheelers"
+                    | "buses"
+                  )[]
+                ).map((tab) => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => {
                       tap();
                       setVehicleTab(tab);
-                      setSelectedVehicle(tab === "cars" ? "alto" : "activa");
+                      setSelectedVehicle(
+                        tab === "cars"
+                          ? "alto"
+                          : tab === "buses"
+                            ? "mini-bus"
+                            : "activa",
+                      );
                     }}
                     className={`px-5 py-2 rounded-full text-xs font-montserrat font-bold uppercase transition-all ${
                       vehicleTab === tab
@@ -582,7 +620,11 @@ export default function LandingPage() {
                     }`}
                     data-ocid={`vehicles.${tab}.tab`}
                   >
-                    {tab === "cars" ? "🚗 Cars" : "🛵 Two Wheelers"}
+                    {tab === "cars"
+                      ? "🚗 Cars"
+                      : tab === "buses"
+                        ? "🚌 Buses"
+                        : "🛵 Two Wheelers"}
                   </button>
                 ))}
               </div>

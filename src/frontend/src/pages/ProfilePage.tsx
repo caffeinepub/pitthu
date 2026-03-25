@@ -24,8 +24,10 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import PitthuCoinsWallet from "../components/PitthuCoinsWallet";
+import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useHaptic } from "../hooks/useHaptic";
+import { getAllBookings } from "../lib/bookingStorage";
 
 const REFERRAL_CODE = "PITTHU-MT42";
 
@@ -42,6 +44,7 @@ export default function ProfilePage() {
   const [referOpen, setReferOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const { user } = useAuth();
   const { tap } = useHaptic();
   const { t } = useLanguage();
 
@@ -100,7 +103,7 @@ export default function ProfilePage() {
                 <Avatar className="w-24 h-24">
                   <AvatarImage src={avatarSrc || undefined} />
                   <AvatarFallback className="bg-brand-orange text-white text-2xl font-montserrat font-bold">
-                    MT
+                    {user?.name?.slice(0, 2).toUpperCase() || "?"}
                   </AvatarFallback>
                 </Avatar>
                 <label
@@ -119,7 +122,7 @@ export default function ProfilePage() {
               </div>
               <div className="text-center">
                 <h1 className="font-montserrat font-black uppercase text-xl text-foreground">
-                  Mountain Traveler
+                  {user?.name || "Guest"}
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">
                   Uttarakhand Explorer
@@ -130,7 +133,11 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-1 justify-center text-brand-orange">
                     <CalendarCheck className="w-4 h-4" />
                     <span className="font-montserrat font-black text-xl">
-                      3
+                      {
+                        getAllBookings().filter(
+                          (b) => b.userId === user?.userId,
+                        ).length
+                      }
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground uppercase font-montserrat tracking-wider">
@@ -141,7 +148,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-1 justify-center text-brand-orange">
                     <Package className="w-4 h-4" />
                     <span className="font-montserrat font-black text-xl">
-                      2
+                      0
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground uppercase font-montserrat tracking-wider">

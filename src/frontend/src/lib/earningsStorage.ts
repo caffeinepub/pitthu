@@ -23,7 +23,7 @@ export function getEarningsSummary(): EarningsSummary {
       booking.commissionFee ?? Math.round(booking.fare * 0.15);
     const convenienceFee = booking.convenienceFee ?? 10;
     const driverEarnings =
-      booking.driverEarnings ?? booking.fare - commissionFee - convenienceFee;
+      booking.driverEarnings ?? booking.fare - commissionFee;
     const adminEarnings =
       booking.adminEarnings ?? commissionFee + convenienceFee;
 

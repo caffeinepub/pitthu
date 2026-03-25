@@ -116,7 +116,7 @@ export default function PaymentPage() {
             </Button>
           </Link>
 
-          <Link to="/trip-tracking">
+          <Link to="/trip-tracking" search={{ bookingId: "" }}>
             <Button
               variant="outline"
               className="w-full max-w-xs mt-3 border-white/20 text-white hover:bg-white/10 rounded-2xl py-3 h-auto"

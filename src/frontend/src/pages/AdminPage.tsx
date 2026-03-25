@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Activity,
   Car,
   CheckCircle2,
   ChevronLeft,
@@ -15,6 +16,7 @@ import {
   ShieldAlert,
   TrendingUp,
   User,
+  Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -25,6 +27,7 @@ import {
   updateBookingStatus,
 } from "../lib/bookingStorage";
 import { getEarningsSummary } from "../lib/earningsStorage";
+import { type RegisteredUser, getAllUsers } from "../lib/userStorage";
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
   pending: "Pending",
@@ -59,6 +62,7 @@ const ACTION_COLORS: Partial<Record<BookingStatus, string>> = {
 };
 
 type FilterTab = "all" | BookingStatus;
+type ActiveTab = "overview" | "bookings" | "earnings" | "users" | "drivers";
 
 const FILTER_TABS: { label: string; value: FilterTab }[] = [
   { label: "All", value: "all" },
@@ -88,26 +92,20 @@ export default function AdminPage() {
   const { isAdmin } = useAuth();
   const [bookings, setBookings] = useState<StoredBooking[]>([]);
   const [filter, setFilter] = useState<FilterTab>("all");
-  const [activeTab, setActiveTab] = useState<"bookings" | "earnings">(
-    "bookings",
-  );
-  // BUG H FIX: track which booking is being updated to prevent double-click
+  const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [updating, setUpdating] = useState<string | null>(null);
 
   const load = useCallback(() => setBookings(getAllBookings()), []);
 
-  // BUG G FIX: initial load
   useEffect(() => {
     load();
   }, [load]);
 
-  // BUG G FIX: poll every 5 seconds for fresh data
   useEffect(() => {
     const id = setInterval(load, 5000);
     return () => clearInterval(id);
   }, [load]);
 
-  // BUG G FIX: also reload when another tab/window writes to localStorage
   useEffect(() => {
     window.addEventListener("storage", load);
     return () => window.removeEventListener("storage", load);
@@ -142,7 +140,6 @@ export default function AdminPage() {
     completed: bookings.filter((b) => b.status === "completed").length,
   };
 
-  // BUG H FIX: guard against double-click by tracking updating state
   const handleStatusUpdate = async (
     bookingId: string,
     current: BookingStatus,
@@ -154,6 +151,14 @@ export default function AdminPage() {
     load();
     setUpdating(null);
   };
+
+  const tabs: { label: string; value: ActiveTab; activeColor: string }[] = [
+    { label: "Overview", value: "overview", activeColor: "bg-violet-600" },
+    { label: "Bookings", value: "bookings", activeColor: "bg-blue-600" },
+    { label: "Earnings", value: "earnings", activeColor: "bg-emerald-600" },
+    { label: "Users", value: "users", activeColor: "bg-blue-500" },
+    { label: "Drivers", value: "drivers", activeColor: "bg-orange-500" },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
@@ -189,29 +194,33 @@ export default function AdminPage() {
         </div>
         {/* Tab nav */}
         <div className="max-w-5xl mx-auto px-4 flex gap-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab("bookings")}
-            data-ocid="admin.tab"
-            className={`px-5 py-2 text-sm font-semibold rounded-t-lg transition-all ${activeTab === "bookings" ? "bg-blue-600 text-white" : "bg-white/10 text-slate-300 hover:bg-white/20"}`}
-          >
-            Bookings
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("earnings")}
-            data-ocid="admin.tab"
-            className={`px-5 py-2 text-sm font-semibold rounded-t-lg transition-all ${activeTab === "earnings" ? "bg-emerald-600 text-white" : "bg-white/10 text-slate-300 hover:bg-white/20"}`}
-          >
-            Earnings
-          </button>
+          {tabs.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => setActiveTab(tab.value)}
+              data-ocid="admin.tab"
+              className={`px-5 py-2 text-sm font-semibold rounded-t-lg transition-all ${
+                activeTab === tab.value
+                  ? `${tab.activeColor} text-white`
+                  : "bg-white/10 text-slate-300 hover:bg-white/20"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-        {activeTab === "earnings" ? (
-          <EarningsTab />
-        ) : (
+        {activeTab === "overview" && (
+          <OverviewTab bookings={bookings} counts={counts} />
+        )}
+        {activeTab === "earnings" && <EarningsTab />}
+        {(activeTab === "users" || activeTab === "drivers") && (
+          <UsersTab filterDrivers={activeTab === "drivers"} />
+        )}
+        {activeTab === "bookings" && (
           <>
             {/* Stats row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -273,7 +282,10 @@ export default function AdminPage() {
 
             {/* Bookings list */}
             {filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div
+                className="flex flex-col items-center justify-center py-20 gap-3"
+                data-ocid="admin.empty_state"
+              >
                 <CheckCircle2 className="w-12 h-12 text-slate-600" />
                 <p className="text-slate-400">
                   No {filter === "all" ? "" : filter} bookings yet
@@ -288,9 +300,7 @@ export default function AdminPage() {
                   >
                     <CardContent className="p-4">
                       <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                        {/* Left: info */}
                         <div className="flex-1 space-y-3">
-                          {/* Top row: name, status, time */}
                           <div className="flex flex-wrap items-center gap-2">
                             <span
                               className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border font-medium ${
@@ -304,7 +314,6 @@ export default function AdminPage() {
                             </span>
                           </div>
 
-                          {/* User info */}
                           <div className="flex flex-wrap gap-x-4 gap-y-1">
                             <div className="flex items-center gap-1.5 text-sm text-white">
                               <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -326,7 +335,6 @@ export default function AdminPage() {
                             </div>
                           </div>
 
-                          {/* Route */}
                           <div className="bg-white/5 rounded-xl p-3 space-y-2">
                             <div className="flex items-start gap-2">
                               <MapPin className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
@@ -352,7 +360,6 @@ export default function AdminPage() {
                             </div>
                           </div>
 
-                          {/* Fare */}
                           <div className="flex items-center justify-between">
                             <span className="text-slate-400 text-sm">Fare</span>
                             <span className="text-white font-semibold">
@@ -361,7 +368,6 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        {/* Right: action button */}
                         {NEXT_STATUS[booking.status] && (
                           <div className="flex sm:flex-col gap-2 sm:min-w-[120px]">
                             <Button
@@ -371,14 +377,30 @@ export default function AdminPage() {
                                   booking.status,
                                 )
                               }
-                              // BUG H FIX: disable while this booking is being updated
                               disabled={updating === booking.bookingId}
+                              data-ocid="admin.primary_button"
                               className={`flex-1 sm:flex-none text-white rounded-xl text-sm font-semibold ${
                                 ACTION_COLORS[booking.status]
                               }`}
                             >
                               {ACTION_LABELS[booking.status]}
                             </Button>
+                            {(booking.status === "accepted" ||
+                              booking.status === "ongoing") && (
+                              <Button
+                                onClick={() =>
+                                  navigate({
+                                    to: "/trip-tracking",
+                                    search: { bookingId: booking.bookingId },
+                                  })
+                                }
+                                data-ocid="admin.secondary_button"
+                                className="flex-1 sm:flex-none rounded-xl text-sm font-semibold border border-blue-500 text-blue-400 bg-transparent hover:bg-blue-500/10"
+                                variant="outline"
+                              >
+                                Track
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -390,6 +412,226 @@ export default function AdminPage() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────────────────
+
+function OverviewTab({
+  bookings,
+  counts,
+}: {
+  bookings: StoredBooking[];
+  counts: Record<FilterTab, number>;
+}) {
+  const summary = getEarningsSummary();
+  const activeCount = counts.pending + counts.accepted + counts.ongoing;
+
+  const statCards = [
+    {
+      label: "Total Earnings",
+      value: `₹${summary.totalRevenue.toLocaleString("en-IN")}`,
+      icon: DollarSign,
+      iconBg: "bg-emerald-500/15",
+      iconColor: "text-emerald-400",
+      border: "border-emerald-500/20",
+    },
+    {
+      label: "Total Rides",
+      value: bookings.length.toString(),
+      icon: Car,
+      iconBg: "bg-blue-500/15",
+      iconColor: "text-blue-400",
+      border: "border-blue-500/20",
+    },
+    {
+      label: "Active Bookings",
+      value: activeCount.toString(),
+      icon: Activity,
+      iconBg: "bg-orange-500/15",
+      iconColor: "text-orange-400",
+      border: "border-orange-500/20",
+    },
+    {
+      label: "Completed Rides",
+      value: counts.completed.toString(),
+      icon: CheckCircle2,
+      iconBg: "bg-purple-500/15",
+      iconColor: "text-purple-400",
+      border: "border-purple-500/20",
+    },
+  ];
+
+  const recentBookings = [...bookings]
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, 5);
+
+  return (
+    <div className="space-y-6" data-ocid="admin.panel">
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {statCards.map((card) => (
+          <Card key={card.label} className={`border ${card.border} bg-white/5`}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className={`w-8 h-8 rounded-lg ${card.iconBg} flex items-center justify-center`}
+                >
+                  <card.icon className={`w-4 h-4 ${card.iconColor}`} />
+                </div>
+                <p className="text-slate-400 text-xs leading-tight">
+                  {card.label}
+                </p>
+              </div>
+              <p className={`text-2xl font-black ${card.iconColor}`}>
+                {card.value}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Earnings snapshot */}
+      <Card className="border border-white/10 bg-white/5">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className="w-4 h-4 text-yellow-400" />
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider">
+              Earnings Snapshot
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/5 rounded-xl p-3">
+              <p className="text-slate-400 text-xs mb-1">Total Revenue</p>
+              <p className="text-emerald-400 text-xl font-black">
+                ₹{summary.totalRevenue.toLocaleString("en-IN")}
+              </p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-3">
+              <p className="text-slate-400 text-xs mb-1">Platform Commission</p>
+              <p className="text-blue-400 text-xl font-black">
+                ₹{summary.totalCommission.toLocaleString("en-IN")}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent bookings */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="w-4 h-4 text-slate-400" />
+          <h3 className="text-white font-semibold text-sm uppercase tracking-wider">
+            Recent Bookings
+          </h3>
+        </div>
+        {recentBookings.length === 0 ? (
+          <div
+            className="flex flex-col items-center justify-center py-12 gap-3"
+            data-ocid="admin.empty_state"
+          >
+            <Activity className="w-10 h-10 text-slate-600" />
+            <p className="text-slate-400 text-sm">No bookings yet</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentBookings.map((b, idx) => (
+              <Card
+                key={b.bookingId}
+                className="border border-white/10 bg-white/5"
+                data-ocid={`admin.item.${idx + 1}`}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-white text-sm font-medium truncate">
+                          {b.userName}
+                        </span>
+                        <span
+                          className={`inline-flex text-[10px] px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${
+                            STATUS_COLORS[b.status]
+                          }`}
+                        >
+                          {STATUS_LABELS[b.status]}
+                        </span>
+                      </div>
+                      <p className="text-slate-400 text-xs truncate">
+                        {b.pickup} → {b.drop}
+                      </p>
+                      <p className="text-slate-500 text-xs capitalize">
+                        {b.vehicle}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-white font-bold text-sm">
+                        ₹{b.fare.toLocaleString("en-IN")}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Earnings Tab ─────────────────────────────────────────────────────────────
+
+function UsersTab({ filterDrivers }: { filterDrivers: boolean }) {
+  const users = getAllUsers().filter(
+    (u) => !filterDrivers || u.role === "driver",
+  );
+  return (
+    <div className="space-y-3">
+      <h2 className="text-white font-montserrat font-bold text-lg mb-4">
+        {filterDrivers ? "Drivers" : "All Users"} ({users.length})
+      </h2>
+      {users.length === 0 && (
+        <div
+          className="text-slate-400 text-center py-10"
+          data-ocid="admin.empty_state"
+        >
+          No {filterDrivers ? "drivers" : "users"} found.
+        </div>
+      )}
+      {users.map((u: RegisteredUser, i: number) => (
+        <Card
+          key={u.userId}
+          className="bg-slate-800 border-white/10"
+          data-ocid={`admin.item.${i + 1}`}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center text-white font-bold text-sm">
+                  {u.name?.slice(0, 2).toUpperCase() || "?"}
+                </div>
+                <div>
+                  <p className="text-white font-semibold">{u.name}</p>
+                  <p className="text-slate-400 text-sm flex items-center gap-1">
+                    <Phone className="w-3 h-3" /> {u.phone}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span
+                  className={`px-2 py-1 rounded text-xs font-bold ${u.role === "admin" ? "bg-violet-600 text-white" : u.role === "driver" ? "bg-orange-500 text-white" : "bg-blue-500 text-white"}`}
+                >
+                  {u.role.toUpperCase()}
+                </span>
+                <p className="text-slate-500 text-xs mt-1">
+                  {new Date(u.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
@@ -433,7 +675,6 @@ function EarningsTab() {
 
   return (
     <div className="space-y-6" data-ocid="admin.panel">
-      {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3">
         {cards.map((c) => (
           <Card key={c.label} className={`border ${c.bg} bg-white/5`}>
@@ -456,7 +697,6 @@ function EarningsTab() {
         </p>
       </div>
 
-      {/* Per-ride breakdown */}
       <div>
         <h3 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">
           Per-Ride Breakdown

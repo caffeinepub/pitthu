@@ -7,8 +7,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { GOOGLE_MAPS_API_KEY } from "@/lib/apiConfig";
 import { cn } from "@/lib/utils";
+import { useSearch } from "@tanstack/react-router";
 import {
   Car,
   MessageCircle,
@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import GeminiRouteHappenings from "../components/GeminiRouteHappenings";
 import { useHaptic } from "../hooks/useHaptic";
+import { getAllBookings } from "../lib/bookingStorage";
 
 interface ChatMessage {
   id: number;
@@ -47,7 +48,274 @@ const initialMessages: ChatMessage[] = [
   },
 ];
 
+// Bezier control points for route curve
+const P0 = { x: 50, y: 160 };
+const P1 = { x: 150, y: 40 };
+const P2 = { x: 250, y: 180 };
+const P3 = { x: 350, y: 60 };
+
+function bezier(t: number) {
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const t2 = t * t;
+  return {
+    x:
+      mt2 * mt * P0.x + 3 * mt2 * t * P1.x + 3 * mt * t2 * P2.x + t2 * t * P3.x,
+    y:
+      mt2 * mt * P0.y + 3 * mt2 * t * P1.y + 3 * mt * t2 * P2.y + t2 * t * P3.y,
+  };
+}
+
+function partialBezierPath(tEnd: number, steps = 40): string {
+  if (tEnd <= 0) return `M ${P0.x} ${P0.y}`;
+  const pts: string[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * tEnd;
+    const p = bezier(t);
+    pts.push(`${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`);
+  }
+  return pts.join(" ");
+}
+
+const STARS = [
+  { cx: 30, cy: 15 },
+  { cx: 80, cy: 8 },
+  { cx: 130, cy: 20 },
+  { cx: 200, cy: 5 },
+  { cx: 260, cy: 18 },
+  { cx: 310, cy: 10 },
+  { cx: 360, cy: 22 },
+  { cx: 390, cy: 7 },
+  { cx: 55, cy: 30 },
+  { cx: 170, cy: 12 },
+];
+
+interface AnimatedRouteMapProps {
+  progress: number;
+  from: string;
+  to: string;
+  eta: number;
+}
+
+function AnimatedRouteMap({ progress, from, to, eta }: AnimatedRouteMapProps) {
+  const t = progress / 100;
+  const carPos = bezier(t);
+  const fullPath = "M 50 160 C 150 40 250 180 350 60";
+  const donePath = partialBezierPath(t);
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden bg-slate-950">
+      <svg
+        viewBox="0 0 400 220"
+        width="100%"
+        className="block"
+        role="img"
+        aria-label="Animated route map showing driver position"
+      >
+        <title>Animated route map showing driver position</title>
+        <defs>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0c1a2e" />
+            <stop offset="100%" stopColor="#0f2240" />
+          </linearGradient>
+          <linearGradient id="routeDone" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#f97316" />
+            <stop offset="100%" stopColor="#3b82f6" />
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <rect width="400" height="220" fill="url(#skyGrad)" />
+
+        {STARS.map((star, idx) => (
+          <circle
+            key={`star-${star.cx}-${star.cy}`}
+            cx={star.cx}
+            cy={star.cy}
+            r="0.8"
+            fill="white"
+            opacity={0.4 + (idx % 3) * 0.2}
+          />
+        ))}
+
+        <polygon
+          points="0,220 0,170 40,130 80,155 120,100 160,140 200,115 240,135 280,90 320,125 360,105 400,130 400,220"
+          fill="#0d2e1a"
+          opacity="0.85"
+        />
+        <polygon
+          points="0,220 0,190 60,160 100,175 150,155 190,168 230,148 270,162 310,145 350,160 400,150 400,220"
+          fill="#0a1f12"
+          opacity="0.7"
+        />
+
+        {[80, 120, 160, 200].map((y) => (
+          <line
+            key={y}
+            x1="0"
+            y1={y}
+            x2="400"
+            y2={y}
+            stroke="white"
+            strokeOpacity="0.03"
+            strokeWidth="0.5"
+          />
+        ))}
+
+        <path
+          d={fullPath}
+          fill="none"
+          stroke="white"
+          strokeOpacity="0.2"
+          strokeWidth="2"
+          strokeDasharray="6 4"
+        />
+
+        {t > 0 && (
+          <path
+            d={donePath}
+            fill="none"
+            stroke="url(#routeDone)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            filter="url(#glow)"
+          />
+        )}
+
+        {/* Pickup marker */}
+        <circle cx={P0.x} cy={P0.y} r="8" fill="#22c55e" opacity="0.9" />
+        <circle cx={P0.x} cy={P0.y} r="12" fill="#22c55e" opacity="0.2" />
+        <text
+          x={P0.x}
+          y={P0.y + 4}
+          textAnchor="middle"
+          fill="white"
+          fontSize="8"
+          fontWeight="bold"
+        >
+          P
+        </text>
+        <text
+          x={P0.x}
+          y={P0.y + 22}
+          textAnchor="middle"
+          fill="#86efac"
+          fontSize="7"
+          fontWeight="600"
+        >
+          {from.length > 8 ? `${from.slice(0, 8)}…` : from}
+        </text>
+
+        {/* Drop marker */}
+        <circle cx={P3.x} cy={P3.y} r="8" fill="#f97316" opacity="0.9" />
+        <circle cx={P3.x} cy={P3.y} r="12" fill="#f97316" opacity="0.2" />
+        <text
+          x={P3.x}
+          y={P3.y + 4}
+          textAnchor="middle"
+          fill="white"
+          fontSize="8"
+          fontWeight="bold"
+        >
+          D
+        </text>
+        <text
+          x={P3.x}
+          y={P3.y + 22}
+          textAnchor="middle"
+          fill="#fdba74"
+          fontSize="7"
+          fontWeight="600"
+        >
+          {to.length > 8 ? `${to.slice(0, 8)}…` : to}
+        </text>
+
+        {/* Car */}
+        <g
+          transform={`translate(${carPos.x}, ${carPos.y})`}
+          filter="url(#glow)"
+        >
+          <rect x="-10" y="-6" width="20" height="10" rx="3" fill="#3b82f6" />
+          <rect x="-6" y="-10" width="12" height="6" rx="2" fill="#60a5fa" />
+          <rect
+            x="-5"
+            y="-9"
+            width="4"
+            height="4"
+            rx="1"
+            fill="#bfdbfe"
+            opacity="0.8"
+          />
+          <rect
+            x="1"
+            y="-9"
+            width="4"
+            height="4"
+            rx="1"
+            fill="#bfdbfe"
+            opacity="0.8"
+          />
+          <circle cx="-6" cy="4" r="3" fill="#1e293b" />
+          <circle cx="-6" cy="4" r="1.5" fill="#94a3b8" />
+          <circle cx="6" cy="4" r="3" fill="#1e293b" />
+          <circle cx="6" cy="4" r="1.5" fill="#94a3b8" />
+          <circle cx="10" cy="-2" r="1.5" fill="#fde047" opacity="0.9" />
+          <circle cx="10" cy="2" r="1.5" fill="#fde047" opacity="0.9" />
+        </g>
+
+        {/* ETA pill */}
+        <rect
+          x="8"
+          y="8"
+          width="90"
+          height="24"
+          rx="12"
+          fill="black"
+          fillOpacity="0.6"
+        />
+        <text
+          x="53"
+          y="24"
+          textAnchor="middle"
+          fill="white"
+          fontSize="9"
+          fontWeight="bold"
+        >
+          ETA: {Math.ceil(eta)} min
+        </text>
+
+        {/* Progress pill */}
+        <rect
+          x="302"
+          y="8"
+          width="90"
+          height="24"
+          rx="12"
+          fill="black"
+          fillOpacity="0.6"
+        />
+        <text x="347" y="24" textAnchor="middle" fill="#94a3b8" fontSize="9">
+          {Math.round(progress)}% done
+        </text>
+      </svg>
+    </div>
+  );
+}
+
 export default function TripTrackingPage() {
+  const { bookingId } = useSearch({ from: "/trip-tracking" });
+  const booking = getAllBookings().find((b) => b.bookingId === bookingId);
+  const fromCity = booking?.pickup ?? "Pickup";
+  const toCity = booking?.drop ?? "Drop";
+  const vehicleLabel = booking?.vehicle ?? "";
+  const fareLabel = booking?.fare ? `₹${booking.fare}` : "";
+
   const [eta, setEta] = useState(12);
   const [progress, setProgress] = useState(0);
   const [sosOpen, setSosOpen] = useState(false);
@@ -71,10 +339,10 @@ export default function TripTrackingPage() {
     return () => clearInterval(timer);
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally scroll when messages change
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [messages]);
 
   const handleSOS = () => {
     hapticSos();
@@ -109,6 +377,26 @@ export default function TripTrackingPage() {
     setInput("");
   };
 
+  if (!bookingId || !booking) {
+    return (
+      <div className="min-h-screen bg-muted flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full bg-muted-foreground/10 flex items-center justify-center mx-auto mb-4">
+            <Car className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h2 className="font-montserrat font-black uppercase text-xl text-foreground mb-2">
+            Booking Not Found
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {bookingId
+              ? "This booking could not be found."
+              : "No booking ID provided."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-muted pb-24">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -125,7 +413,7 @@ export default function TripTrackingPage() {
                 Live Trip Tracking
               </h1>
               <p className="text-muted-foreground text-sm">
-                Rishikesh → Kedarnath
+                {fromCity} → {toCity}
               </p>
             </div>
             <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 border border-emerald-300">
@@ -136,40 +424,17 @@ export default function TripTrackingPage() {
             </div>
           </div>
 
-          {/* Google Maps Embed */}
-          <Card className="shadow-glass mb-6 overflow-hidden">
+          {/* Animated SVG Route Map */}
+          <Card className="shadow-glass mb-4 overflow-hidden">
             <CardContent className="p-0">
-              <div className="relative" data-ocid="tracking.canvas_target">
-                <iframe
-                  src={`https://www.google.com/maps/embed/v1/directions?key=${GOOGLE_MAPS_API_KEY}&origin=Rishikesh,Uttarakhand&destination=Kedarnath,Uttarakhand&mode=driving`}
-                  width="100%"
-                  height="224"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Trip route map"
+              <div data-ocid="tracking.canvas_target">
+                <AnimatedRouteMap
+                  progress={progress}
+                  from={fromCity}
+                  to={toCity}
+                  eta={eta}
                 />
-
-                {/* ETA overlay */}
-                <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-xl px-3 py-2">
-                  <p className="text-white font-montserrat font-black text-sm uppercase">
-                    ETA: {Math.ceil(eta)} min
-                  </p>
-                  <p className="text-white/60 text-[10px]">
-                    Rishikesh → Kedarnath
-                  </p>
-                </div>
-
-                {/* Route info overlay */}
-                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm rounded-xl px-2 py-1.5">
-                  <p className="text-white/80 text-[10px] font-medium">
-                    {Math.round(progress)}% complete
-                  </p>
-                </div>
               </div>
-
-              {/* Progress bar */}
               <div className="h-2 bg-muted">
                 <div
                   className="h-full bg-primary transition-all duration-300"
@@ -179,7 +444,7 @@ export default function TripTrackingPage() {
             </CardContent>
           </Card>
 
-          <GeminiRouteHappenings from="Rishikesh" to="Kedarnath" />
+          <GeminiRouteHappenings from={fromCity} to={toCity} />
 
           {/* Driver ETA Card */}
           <Card className="shadow-card mb-6">
@@ -214,7 +479,7 @@ export default function TripTrackingPage() {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Tata Sumo Gold · UP07-AB-1234
+                    {vehicleLabel || "Tata Sumo Gold"} · UP07-AB-1234
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -244,14 +509,14 @@ export default function TripTrackingPage() {
                 </div>
               </div>
 
-              {/* Arrives in callout */}
               <div className="mt-4 bg-primary/8 rounded-xl px-4 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-primary font-montserrat font-black text-2xl">
                     Arrives in {Math.ceil(eta)} min
                   </p>
                   <p className="text-muted-foreground text-xs">
-                    Rishikesh → Kedarnath · 156 km
+                    {fromCity} → {toCity}
+                    {fareLabel ? ` · ${fareLabel}` : ""}
                   </p>
                 </div>
                 <Car className="w-8 h-8 text-primary/40" />
@@ -259,7 +524,6 @@ export default function TripTrackingPage() {
             </CardContent>
           </Card>
 
-          {/* Safety Buttons */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <button
               type="button"
@@ -281,7 +545,6 @@ export default function TripTrackingPage() {
         </motion.div>
       </div>
 
-      {/* SOS floating button */}
       <motion.button
         type="button"
         onClick={handleSOS}
@@ -293,7 +556,6 @@ export default function TripTrackingPage() {
         SOS
       </motion.button>
 
-      {/* SOS Modal */}
       {sosOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <motion.div
@@ -331,7 +593,6 @@ export default function TripTrackingPage() {
         </div>
       )}
 
-      {/* Chat Sheet */}
       <Sheet open={chatOpen} onOpenChange={setChatOpen}>
         <SheetContent
           side="bottom"
@@ -358,7 +619,11 @@ export default function TripTrackingPage() {
                 >
                   <p>{msg.text}</p>
                   <p
-                    className={`text-[10px] mt-1 ${msg.sender === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}
+                    className={`text-[10px] mt-1 ${
+                      msg.sender === "user"
+                        ? "text-primary-foreground/60"
+                        : "text-muted-foreground"
+                    }`}
                   >
                     {msg.time}
                   </p>

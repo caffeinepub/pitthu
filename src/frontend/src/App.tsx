@@ -76,6 +76,9 @@ const aboutRoute = createRoute({
 const tripTrackingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/trip-tracking",
+  validateSearch: (search: Record<string, unknown>) => ({
+    bookingId: String(search.bookingId || ""),
+  }),
   component: () => (
     <Suspense fallback={<PageLoader />}>
       <TripTrackingPage />

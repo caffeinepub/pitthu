@@ -140,7 +140,9 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
                 aria-label="Profile"
               >
                 <div className="w-6 h-6 rounded-full bg-brand-orange flex items-center justify-center">
-                  <User className="w-3.5 h-3.5 text-white" />
+                  <span className="text-white text-xs font-bold leading-none">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
                 </div>
                 <span className="text-white text-xs font-montserrat font-semibold tracking-wide truncate max-w-[80px]">
                   {user.name.split(" ")[0]}
@@ -152,7 +154,9 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
                 className="md:hidden w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
                 aria-label="Profile"
               >
-                <User className="w-4 h-4" />
+                <span className="text-white text-sm font-bold leading-none">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
               </Link>
               {/* Logout */}
               <button
