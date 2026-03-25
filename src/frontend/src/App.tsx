@@ -151,6 +151,10 @@ const driverDashboardRoute = createRoute({
 const paymentRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/payment",
+  validateSearch: (search: Record<string, unknown>) => ({
+    bookingId: String(search.bookingId || ""),
+    fare: Number(search.fare || 0),
+  }),
   component: () => (
     <Suspense fallback={<PageLoader />}>
       <PaymentPage />

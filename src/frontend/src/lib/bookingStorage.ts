@@ -1,4 +1,5 @@
 export type BookingStatus = "pending" | "accepted" | "ongoing" | "completed";
+export type PaymentStatus = "unpaid" | "paid";
 
 export interface StoredBooking {
   bookingId: string;
@@ -16,6 +17,8 @@ export interface StoredBooking {
   driverEarnings?: number; // fare - commissionFee - convenienceFee
   adminEarnings?: number; // commissionFee + convenienceFee
   driverName?: string;
+  paymentStatus?: PaymentStatus;
+  paymentMethod?: string;
 }
 
 const KEY = "pitthu-bookings";
@@ -30,7 +33,11 @@ export function getAllBookings(): StoredBooking[] {
 
 export function saveBooking(booking: StoredBooking): void {
   const all = getAllBookings();
-  all.unshift(booking);
+  const withDefaults: StoredBooking = {
+    paymentStatus: "unpaid",
+    ...booking,
+  };
+  all.unshift(withDefaults);
   localStorage.setItem(KEY, JSON.stringify(all));
 }
 
@@ -40,6 +47,15 @@ export function updateBookingStatus(
 ): void {
   const all = getAllBookings().map((b) =>
     b.bookingId === bookingId ? { ...b, status } : b,
+  );
+  localStorage.setItem(KEY, JSON.stringify(all));
+}
+
+export function updateBookingPayment(bookingId: string, method?: string): void {
+  const all = getAllBookings().map((b) =>
+    b.bookingId === bookingId
+      ? { ...b, paymentStatus: "paid" as PaymentStatus, paymentMethod: method }
+      : b,
   );
   localStorage.setItem(KEY, JSON.stringify(all));
 }

@@ -249,7 +249,10 @@ export default function BookRidePage() {
           },
         },
       }).catch(() => {});
-      navigate({ to: "/booking-status", search: { bookingId: newBookingId } });
+      navigate({
+        to: "/payment",
+        search: { bookingId: newBookingId, fare: finalFare },
+      });
     } catch (_err) {
       toast.error("Booking failed. Please try again.");
     }

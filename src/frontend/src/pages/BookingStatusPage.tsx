@@ -192,8 +192,21 @@ export default function BookingStatusPage() {
               <p className="font-bold text-sm truncate">{booking.userName}</p>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-white/10 text-center">
+          <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
             <p className="text-white/40 text-xs">{date}</p>
+            {booking.paymentStatus === "paid" ? (
+              <span className="inline-flex items-center gap-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                ✓ Payment Received
+              </span>
+            ) : (
+              <a
+                href={`/payment?bookingId=${booking.bookingId}&fare=${booking.fare}`}
+                className="inline-flex items-center gap-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full px-2.5 py-0.5 text-xs font-semibold hover:bg-amber-500/30 transition-colors"
+                data-ocid="booking_status.secondary_button"
+              >
+                ⏳ Pay Now
+              </a>
+            )}
           </div>
         </motion.div>
 

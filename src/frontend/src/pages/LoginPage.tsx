@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogIn, Mountain, User } from "lucide-react";
+import { Lock, LogIn, Mountain, User } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { findUserByPhone } from "../lib/userStorage";
 
 const ADMIN_PHONE = "9999999999";
+const ADMIN_PASSWORD = "Youtubekabadshah";
 
 interface LoginFormProps {
   isDriver: boolean;
@@ -18,6 +19,8 @@ interface LoginFormProps {
   setName: (v: string) => void;
   phone: string;
   setPhone: (v: string) => void;
+  password: string;
+  setPassword: (v: string) => void;
   returningUser: string | null;
   onLogin: () => void;
 }
@@ -28,9 +31,17 @@ function LoginForm({
   setName,
   phone,
   setPhone,
+  password,
+  setPassword,
   returningUser,
   onLogin,
 }: LoginFormProps) {
+  const adminPasswordRequired = phone === ADMIN_PHONE;
+  const loginDisabled =
+    !name.trim() ||
+    phone.length < 10 ||
+    (adminPasswordRequired && password.length === 0);
+
   return (
     <motion.div
       key={isDriver ? "driver" : "rider"}
@@ -108,10 +119,38 @@ function LoginForm({
         </div>
       </div>
 
+      {/* Admin password field */}
+      <AnimatePresence>
+        {adminPasswordRequired && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-2 overflow-hidden"
+          >
+            <Label className="text-white/80 text-sm">Admin Password</Label>
+            <div className="flex gap-2 items-center">
+              <div className="flex items-center bg-white/10 border border-white/20 rounded-xl px-3 text-white/60 shrink-0 h-10">
+                <Lock className="w-4 h-4" />
+              </div>
+              <Input
+                data-ocid="login.admin_password_input"
+                type="password"
+                placeholder="Enter admin password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/40 rounded-xl focus:border-blue-400 focus:ring-blue-400/20"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Button
         data-ocid="login.primary_button"
         onClick={onLogin}
-        disabled={!name.trim() || phone.length < 10}
+        disabled={loginDisabled}
         className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/20"
       >
         <LogIn className="w-4 h-4 mr-2" />
@@ -126,11 +165,13 @@ export default function LoginPage() {
   const { setUserFromLogin } = useAuth();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [activeTab, setActiveTab] = useState<"rider" | "driver">("rider");
   const [returningUser, setReturningUser] = useState<string | null>(null);
 
   const handlePhoneChange = (value: string) => {
     setPhone(value);
+    setPassword("");
     if (value.length === 10) {
       const existing = findUserByPhone(value);
       if (existing) {
@@ -151,6 +192,10 @@ export default function LoginPage() {
     }
     if (phone.length !== 10) {
       toast.error("Enter a valid 10-digit phone number");
+      return;
+    }
+    if (phone === ADMIN_PHONE && password !== ADMIN_PASSWORD) {
+      toast.error("Incorrect admin password");
       return;
     }
     setUserFromLogin(name.trim(), phone, activeTab);
@@ -220,6 +265,8 @@ export default function LoginPage() {
                 setName={setName}
                 phone={phone}
                 setPhone={handlePhoneChange}
+                password={password}
+                setPassword={setPassword}
                 returningUser={returningUser}
                 onLogin={handleLogin}
               />
@@ -231,17 +278,13 @@ export default function LoginPage() {
                 setName={setName}
                 phone={phone}
                 setPhone={handlePhoneChange}
+                password={password}
+                setPassword={setPassword}
                 returningUser={returningUser}
                 onLogin={handleLogin}
               />
             </TabsContent>
           </Tabs>
-        </div>
-
-        <div className="mt-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-xs text-green-300/80 text-center">
-          <span className="font-semibold text-green-300">Getting started:</span>{" "}
-          Enter your name + phone number to get started &nbsp;|&nbsp;{" "}
-          <span className="font-mono">9999999999</span> = admin
         </div>
 
         <p className="text-center text-white/40 text-sm mt-4">

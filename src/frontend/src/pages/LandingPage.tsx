@@ -30,22 +30,47 @@ const destinations = [
   {
     name: "Valley of Flowers",
     subtitle: "UNESCO World Heritage",
-    img: "/assets/generated/dest-valley-of-flowers.dim_400x300.jpg",
+    img: "/assets/generated/valley-of-flowers.dim_800x500.jpg",
   },
   {
     name: "Kedarnath",
     subtitle: "Sacred Himalayan Shrine",
-    img: "/assets/generated/dest-kedarnath.dim_400x300.jpg",
+    img: "/assets/generated/kedarnath.dim_800x500.jpg",
   },
   {
     name: "Rishikesh",
     subtitle: "Yoga & Adventure Capital",
-    img: "/assets/generated/dest-rishikesh.dim_400x300.jpg",
+    img: "/assets/generated/rishikesh.dim_800x500.jpg",
   },
   {
     name: "Badrinath",
     subtitle: "Char Dham Pilgrimage",
-    img: "/assets/generated/dest-badrinath.dim_400x300.jpg",
+    img: "/assets/generated/badrinath.dim_800x500.jpg",
+  },
+  {
+    name: "Auli",
+    subtitle: "Himalayan Ski Paradise",
+    img: "/assets/generated/auli.dim_800x500.jpg",
+  },
+  {
+    name: "Mussoorie",
+    subtitle: "Queen of Hill Stations",
+    img: "/assets/generated/mussoorie.dim_800x500.jpg",
+  },
+  {
+    name: "Haridwar",
+    subtitle: "Gateway to the Gods",
+    img: "/assets/generated/haridwar.dim_800x500.jpg",
+  },
+  {
+    name: "Nainital",
+    subtitle: "Lake District of India",
+    img: "/assets/generated/nainital.dim_800x500.jpg",
+  },
+  {
+    name: "Chopta",
+    subtitle: "Mini Switzerland of India",
+    img: "/assets/generated/chopta.dim_800x500.jpg",
   },
 ];
 
@@ -290,7 +315,7 @@ export default function LandingPage() {
       {/* ===== HERO SECTION ===== */}
       <section className="relative min-h-[92vh] flex items-center overflow-hidden">
         <img
-          src="/assets/generated/hero-uttarakhand.dim_1400x700.jpg"
+          src="/assets/generated/hero-uttarakhand-himalayas.dim_1400x700.jpg"
           alt="Uttarakhand Himalayas"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -424,6 +449,37 @@ export default function LandingPage() {
               </button>
             </Link>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ===== CAR BANNER STRIP ===== */}
+      <section className="bg-black py-4 overflow-hidden border-b border-white/5">
+        <div className="container mx-auto px-4">
+          <p className="text-white/50 font-montserrat text-xs uppercase tracking-widest mb-3">
+            Available Vehicles
+          </p>
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            {CARS.map((car) => (
+              <Link to="/book-ride" key={car.id}>
+                <div className="flex-shrink-0 relative rounded-xl overflow-hidden w-40 h-24 group cursor-pointer">
+                  <img
+                    src={car.img}
+                    alt={car.label}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <div className="absolute bottom-2 left-2">
+                    <p className="text-white font-montserrat font-bold text-xs">
+                      {car.label}
+                    </p>
+                    <p className="text-brand-orange text-[10px] font-bold">
+                      {car.price}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -832,7 +888,7 @@ export default function LandingPage() {
               Top Destinations
             </h2>
           </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {destinations.map((dest, i) => (
               <motion.div
                 key={dest.name}
