@@ -1,19 +1,22 @@
-import { createContext, useContext, useEffect, useState } from "react";
-
-// 👇 Change this to the actual admin phone number (digits only, no +91)
-const ADMIN_PHONE = "9999999999";
+import { createContext, useContext, useState } from "react";
+import { registerOrLoginUser } from "../lib/userStorage";
 
 export type UserRole = "user" | "driver" | "admin";
 
 export interface AuthUser {
+  userId: string;
   phone: string;
+  name: string;
   role: UserRole;
-  name?: string;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
-  setUserFromLogin: (phone: string, tab: "rider" | "driver") => void;
+  setUserFromLogin: (
+    name: string,
+    phone: string,
+    tab: "rider" | "driver",
+  ) => void;
   logout: () => void;
   isAdmin: boolean;
   isDriver: boolean;
@@ -31,25 +34,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
-  const setUserFromLogin = (phone: string, tab: "rider" | "driver") => {
-    const digits = phone.replace(/\D/g, "");
-    let role: UserRole = "user";
-    if (digits === ADMIN_PHONE) {
-      role = "admin";
-    } else if (tab === "driver") {
-      role = "driver";
-    }
-    const newUser: AuthUser = { phone: digits, role };
-    setUser(newUser);
-    localStorage.setItem("pitthu-auth-user", JSON.stringify(newUser));
+  const setUserFromLogin = (
+    name: string,
+    phone: string,
+    tab: "rider" | "driver",
+  ) => {
+    const registered = registerOrLoginUser(name, phone, tab);
+    const authUser: AuthUser = {
+      userId: registered.userId,
+      phone: registered.phone,
+      name: registered.name,
+      role: registered.role,
+    };
+    setUser(authUser);
+    localStorage.setItem("pitthu-auth-user", JSON.stringify(authUser));
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("pitthu-auth-user");
-    try {
-      (window as any).firebase?.auth().signOut();
-    } catch (_) {}
   };
 
   return (

@@ -11,6 +11,10 @@ export interface StoredBooking {
   time: string; // ISO string
   status: BookingStatus;
   fare: number;
+  commissionFee?: number; // 15% of fare (platform cut)
+  convenienceFee?: number; // ₹10 flat
+  driverEarnings?: number; // fare - commissionFee - convenienceFee
+  adminEarnings?: number; // commissionFee + convenienceFee
 }
 
 const KEY = "pitthu-bookings";

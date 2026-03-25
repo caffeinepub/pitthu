@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import {
+  LogIn,
   LogOut,
   Menu,
   Moon,
@@ -129,21 +130,56 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
           {/* Notifications */}
           <NotificationCenter />
 
+          {/* Login / Profile / Logout */}
           {user ? (
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                toast.success("Logged out successfully");
-              }}
-              className="hidden md:flex items-center gap-1.5 text-white/60 hover:text-white text-xs font-montserrat uppercase tracking-wider transition-colors px-2"
-              data-ocid="header.toggle"
-              aria-label="Logout"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              Logout
-            </button>
-          ) : null}
+            <div className="flex items-center gap-1.5">
+              {/* User name chip */}
+              <Link
+                to="/profile"
+                className="hidden md:flex items-center gap-1.5 bg-white/20 hover:bg-white/30 transition-colors rounded-full pl-1.5 pr-3 py-1"
+                aria-label="Profile"
+              >
+                <div className="w-6 h-6 rounded-full bg-brand-orange flex items-center justify-center">
+                  <User className="w-3.5 h-3.5 text-white" />
+                </div>
+                <span className="text-white text-xs font-montserrat font-semibold tracking-wide truncate max-w-[80px]">
+                  {user.name.split(" ")[0]}
+                </span>
+              </Link>
+              {/* Mobile profile icon */}
+              <Link
+                to="/profile"
+                className="md:hidden w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                aria-label="Profile"
+              >
+                <User className="w-4 h-4" />
+              </Link>
+              {/* Logout */}
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  toast.success("Logged out successfully");
+                }}
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-red-500/30 flex items-center justify-center text-white/70 hover:text-white transition-colors"
+                aria-label="Logout"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <Link to="/login">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 transition-colors rounded-full px-3 py-1.5 text-white text-xs font-montserrat font-bold uppercase tracking-wider"
+                aria-label="Login"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Login
+              </button>
+            </Link>
+          )}
 
           <Link to="/book-ride">
             <Button
@@ -153,15 +189,7 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
               {t("bookNow")}
             </Button>
           </Link>
-          <Link to="/profile">
-            <button
-              type="button"
-              className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-              aria-label="Profile"
-            >
-              <User className="w-4 h-4" />
-            </button>
-          </Link>
+
           <button
             type="button"
             className="md:hidden text-white"
@@ -220,7 +248,7 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
                 <Moon className="w-4 h-4" />
               )}
             </button>
-            {user && (
+            {user ? (
               <button
                 type="button"
                 onClick={() => {
@@ -234,6 +262,15 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
                 <LogOut className="w-3.5 h-3.5" />
                 Logout
               </button>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-1.5 text-white font-montserrat text-xs uppercase tracking-wider ml-auto font-bold"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Login
+              </Link>
             )}
           </div>
           <Button

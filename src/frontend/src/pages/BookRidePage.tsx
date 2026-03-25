@@ -101,9 +101,6 @@ export default function BookRidePage() {
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [selectedUPI, setSelectedUPI] = useState("gpay");
-  const [biometricOpen, setBiometricOpen] = useState(false);
-  const [biometricProgress, setBiometricProgress] = useState(0);
-  const [biometricDone, setBiometricDone] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [paymentTab, setPaymentTab] = useState<"upi" | "cash" | "wallet">(
     "upi",
@@ -134,6 +131,10 @@ export default function BookRidePage() {
   const poolFare =
     rideMode === "pool" ? Math.round(estimatedPrice / 2) : estimatedPrice;
   const finalFare = rideMode === "pool" ? poolFare : estimatedPrice;
+  const commissionFee = Math.round(finalFare * 0.15);
+  const convenienceFee = 10;
+  const driverPayout = finalFare - commissionFee - convenienceFee;
+  const totalPayable = finalFare + convenienceFee;
   const sameLocation = from && to && from === to;
   const dateStr = date ? format(date, "dd MMM yyyy") : "";
   const passengerCount = Number(passengers);
@@ -189,22 +190,7 @@ export default function BookRidePage() {
       return;
     }
     tap();
-    setBiometricOpen(true);
-    setBiometricProgress(0);
-    setBiometricDone(false);
-    let prog = 0;
-    const interval = setInterval(() => {
-      prog += 5;
-      setBiometricProgress(prog);
-      if (prog >= 100) {
-        clearInterval(interval);
-        setBiometricDone(true);
-        setTimeout(() => {
-          setBiometricOpen(false);
-          doBooking();
-        }, 1000);
-      }
-    }, 100);
+    doBooking();
   };
 
   const doBooking = async () => {
@@ -225,6 +211,10 @@ export default function BookRidePage() {
         time: new Date().toISOString(),
         status: "pending",
         fare: finalFare,
+        commissionFee,
+        convenienceFee,
+        driverEarnings: driverPayout,
+        adminEarnings: commissionFee + convenienceFee,
       });
       const coins = Math.round(finalFare * 0.05);
       const prevCoins = Number(localStorage.getItem("pitthu-coins") || "0");
@@ -254,7 +244,6 @@ export default function BookRidePage() {
       }).catch(() => {});
       navigate({ to: "/booking-status", search: { bookingId: newBookingId } });
     } catch (_err) {
-      setBiometricOpen(false);
       toast.error("Booking failed. Please try again.");
     }
   };
@@ -1053,26 +1042,29 @@ export default function BookRidePage() {
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-white/40 text-xs">
+                      <span className="text-blue-300/70 text-xs">
                         Platform Commission (15%)
                       </span>
-                      <span className="text-white/40 text-xs">
-                        -₹{Math.round(finalFare * 0.15)}
+                      <span className="text-blue-300/70 text-xs">
+                        ₹{commissionFee}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-white/70">Convenience Fee</span>
-                      <span className="text-white font-medium">+₹10</span>
+                      <span className="text-white font-medium">
+                        +₹{convenienceFee}
+                      </span>
                     </div>
                     <div className="border-t border-white/20 pt-2 flex justify-between items-center">
-                      <span className="text-white font-bold">You Pay</span>
+                      <span className="text-white font-bold">
+                        Total Payable
+                      </span>
                       <span className="text-orange-400 font-black text-xl">
-                        ₹{finalFare + 10}
+                        ₹{totalPayable}
                       </span>
                     </div>
                     <p className="text-white/30 text-xs">
-                      Driver earns ₹{Math.round(finalFare * 0.85)} (85% of base
-                      fare)
+                      Driver earns ₹{driverPayout} after platform deductions
                     </p>
                   </div>
 
@@ -1145,46 +1137,6 @@ export default function BookRidePage() {
           )}
         </form>
       </div>
-      <Dialog open={biometricOpen} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-sm" data-ocid="ride.modal">
-          <DialogHeader>
-            <DialogTitle className="font-montserrat uppercase text-center">
-              Secure Payment
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center py-6 gap-4">
-            <motion.div
-              animate={biometricDone ? { scale: [1, 1.2, 1] } : { rotate: 360 }}
-              transition={
-                biometricDone
-                  ? { duration: 0.4 }
-                  : {
-                      repeat: Number.POSITIVE_INFINITY,
-                      duration: 2,
-                      ease: "linear",
-                    }
-              }
-              className={`w-20 h-20 rounded-full flex items-center justify-center border-4 ${
-                biometricDone
-                  ? "border-emerald-500 bg-emerald-50"
-                  : "border-primary bg-primary/10"
-              }`}
-            >
-              {biometricDone ? (
-                <CheckCircle2 className="w-10 h-10 text-emerald-500" />
-              ) : (
-                <span className="text-3xl">{"\uD83E\uDD37"}</span>
-              )}
-            </motion.div>
-            <p className="font-montserrat font-bold text-foreground text-center">
-              {biometricDone
-                ? "Authentication Successful \u2713"
-                : "Authenticating with Face ID..."}
-            </p>
-            <Progress value={biometricProgress} className="w-full" />
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -1,41 +1,30 @@
-# PITTHU - Admin Dashboard + Monetization System
+# PITTHU - Real Earning System
 
 ## Current State
-AdminPage.tsx exists but is basic: shows bookings table from backend actor, checks `isCallerAdmin()`. No user management, no driver assignment, no commission system, no earnings tracking.
-
-BookRidePage.tsx has a booking flow with fare estimates but no commission/fee breakdown.
+- Bookings stored with a `fare` field (total fare, no breakdown)
+- AdminPage shows fare as a single number
+- BookRidePage shows a fare breakdown (base fare, mountain surcharge, promo, pool split) but no platform commission or convenience fee
+- No earningsStorage utility; no admin/driver earnings tracking
+- AdminPage has no Earnings tab
 
 ## Requested Changes (Diff)
 
 ### Add
-- **Enhanced AdminPage**: Full admin dashboard with tabs: Overview, Bookings, Users, Drivers, Earnings
-- **Commission system**: 15% platform commission + ₹10 convenience fee on each ride
-- **FareBreakdown component**: Shows base fare, commission (15%), convenience fee (₹10), total
-- **Admin Earnings tab**: Total revenue from commissions, per-booking breakdown, summary cards
-- **Driver Earnings tab**: Per-driver earnings after commission deduction (driver gets 85% of base fare)
-- **Mock data layer**: Since backend data may be limited, use rich mock data for the dashboard UI
+- `earningsStorage.ts` — utility to store/read admin and driver earnings per booking
+- `commissionFee` (15% of base fare before surcharges) and `convenienceFee` (₹10 flat) to `StoredBooking`
+- `driverEarnings` (fare - commission - convenience fee) and `adminEarnings` (commission + convenience fee) fields on booking
+- Earnings Dashboard tab in AdminPage: total admin revenue, per-booking breakdown, driver payouts
 
 ### Modify
-- **AdminPage**: Complete rewrite with full-featured dashboard
-- **BookRidePage**: Add fare breakdown showing commission + convenience fee before confirmation
-- **DriverDashboardPage**: Show earnings after commission (driver gets base fare minus 15%)
+- `bookingStorage.ts` — add `commissionFee`, `convenienceFee`, `driverEarnings`, `adminEarnings` to `StoredBooking` interface
+- `BookRidePage.tsx` — compute commission (15% of finalFare) and ₹10 convenience fee, show in fare breakdown, pass to `saveBooking`
+- `AdminPage.tsx` — add Earnings tab with summary cards (total revenue, commissions, driver payouts) and per-booking earnings rows
 
 ### Remove
-- Nothing removed
+- Nothing
 
 ## Implementation Plan
-
-### Commission Logic
-- Base fare: existing vehicle price
-- Platform commission: 15% of base fare
-- Convenience fee: ₹10 flat
-- Total fare = base fare + convenience fee (commission is deducted from driver payout, not added to rider)
-- Driver payout = base fare × 0.85
-- Admin earnings per booking = (base fare × 0.15) + ₹10 convenience fee
-
-### Admin Dashboard Tabs
-1. **Overview**: Stats cards - Total Bookings, Active Rides, Total Revenue, Total Users, Total Drivers
-2. **Bookings**: Full table with columns: BookingID, Rider, Pickup→Drop, Vehicle, Fare, Status, Driver, Actions (Assign Driver). Filter by status (All/Pending/Ongoing/Completed/Cancelled).
-3. **Users**: Table of registered users with ride count and total spend
-4. **Drivers**: Table of drivers with rides completed, earnings, rating, online status
-5. **Earnings**: Revenue charts (mock), commission breakdown per booking, total admin revenue, driver payouts summary
+1. Update `bookingStorage.ts`: add earnings fields to StoredBooking interface
+2. Create `earningsStorage.ts`: helpers to compute totals from all bookings
+3. Update `BookRidePage.tsx`: calculate commission=15% of finalFare, convenienceFee=₹10, driverPayout=finalFare-commission-convenienceFee; show in fare breakdown UI; pass all fields to saveBooking
+4. Update `AdminPage.tsx`: add Earnings tab with revenue summary cards and per-booking breakdown table
