@@ -1,8 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { Menu, Moon, Mountain, Share2, Sun, User, X } from "lucide-react";
+import {
+  LogOut,
+  Menu,
+  Moon,
+  Mountain,
+  Share2,
+  Sun,
+  User,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useTheme } from "../contexts/ThemeContext";
 import NotificationCenter from "./NotificationCenter";
@@ -36,6 +46,7 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { lang, toggleLang, t } = useLanguage();
+  const { isAdmin, user, logout } = useAuth();
 
   return (
     <header
@@ -66,6 +77,15 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
               {link.label || t(link.labelKey!)}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="text-yellow-300 hover:text-yellow-200 font-montserrat text-sm uppercase tracking-wider font-bold transition-colors"
+              data-ocid="nav.admin_link"
+            >
+              Admin Panel
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -108,6 +128,22 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
 
           {/* Notifications */}
           <NotificationCenter />
+
+          {user ? (
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                toast.success("Logged out successfully");
+              }}
+              className="hidden md:flex items-center gap-1.5 text-white/60 hover:text-white text-xs font-montserrat uppercase tracking-wider transition-colors px-2"
+              data-ocid="header.toggle"
+              aria-label="Logout"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Logout
+            </button>
+          ) : null}
 
           <Link to="/book-ride">
             <Button
@@ -153,6 +189,16 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
               {link.label || t(link.labelKey!)}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="block py-2 text-yellow-300 font-montserrat text-sm uppercase tracking-wider font-bold"
+              onClick={() => setMobileOpen(false)}
+              data-ocid="nav.admin_link"
+            >
+              Admin Panel
+            </Link>
+          )}
           <div className="flex items-center gap-3 mt-3">
             <button
               type="button"
@@ -174,6 +220,21 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
                 <Moon className="w-4 h-4" />
               )}
             </button>
+            {user && (
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  setMobileOpen(false);
+                  toast.success("Logged out successfully");
+                }}
+                className="flex items-center gap-1.5 text-white/60 hover:text-white text-xs font-montserrat uppercase tracking-wider ml-auto"
+                data-ocid="header.toggle"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Logout
+              </button>
+            )}
           </div>
           <Button
             className="mt-3 w-full bg-white/20 hover:bg-white/30 text-white font-montserrat font-bold uppercase text-xs rounded-full"

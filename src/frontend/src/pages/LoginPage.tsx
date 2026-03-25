@@ -2,82 +2,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { auth } from "@/lib/firebase";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Loader2, Mountain, Phone, ShieldCheck } from "lucide-react";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import type { ConfirmationResult } from "firebase/auth";
+import { Loader2, LogIn, Mountain, Phone, ShieldCheck } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
 
-export default function LoginPage() {
-  const navigate = useNavigate();
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [activeTab, setActiveTab] = useState<"rider" | "driver">("rider");
-  const confirmationRef = useRef<any>(null);
+// PhoneOtpForm is defined outside LoginPage to prevent remount-on-render (avoids reCAPTCHA destruction)
+interface PhoneOtpFormProps {
+  isDriver: boolean;
+  phone: string;
+  setPhone: (v: string) => void;
+  otp: string;
+  setOtp: (v: string) => void;
+  otpSent: boolean;
+  loading: boolean;
+  verifying: boolean;
+  demoLoading: boolean;
+  handleSendOTP: () => void;
+  handleVerifyOTP: () => void;
+  handleDemoLogin: () => void;
+  handleGoogle: () => void;
+}
 
-  useEffect(() => {
-    const fb = (window as any).firebase;
-    if (!fb) return;
-    try {
-      (window as any).recaptchaVerifier = new fb.auth.RecaptchaVerifier(
-        "login-recaptcha",
-        { size: "invisible" },
-      );
-    } catch (_) {
-      // Firebase not yet ready
-    }
-  }, []);
-
-  const handleSendOTP = async () => {
-    if (!phone || phone.length < 10) {
-      toast.error("Enter a valid 10-digit phone number");
-      return;
-    }
-    setLoading(true);
-    try {
-      const fb = (window as any).firebase;
-      if (!fb) throw new Error("Firebase not loaded");
-      const fullPhone = `+91${phone.replace(/\D/g, "")}`;
-      const result = await fb
-        .auth()
-        .signInWithPhoneNumber(fullPhone, (window as any).recaptchaVerifier);
-      confirmationRef.current = result;
-      setOtpSent(true);
-      toast.success(`OTP sent to +91${phone}`);
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to send OTP. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      toast.error("Enter the 6-digit OTP");
-      return;
-    }
-    setVerifying(true);
-    try {
-      if (!confirmationRef.current)
-        throw new Error("Session expired. Resend OTP.");
-      await confirmationRef.current.confirm(otp);
-      toast.success("Login successful! Welcome to PITTHU 🎉");
-      navigate({ to: activeTab === "driver" ? "/driver-dashboard" : "/" });
-    } catch (err: any) {
-      toast.error(err?.message || "Wrong OTP. Please try again.");
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const handleGoogle = () => {
-    toast.info("Google login coming soon");
-  };
-
-  const PhoneOtpForm = ({ isDriver }: { isDriver: boolean }) => (
+function PhoneOtpForm({
+  isDriver,
+  phone,
+  setPhone,
+  otp,
+  setOtp,
+  otpSent,
+  loading,
+  verifying,
+  demoLoading,
+  handleSendOTP,
+  handleVerifyOTP,
+  handleDemoLogin,
+  handleGoogle,
+}: PhoneOtpFormProps) {
+  return (
     <motion.div
       key={isDriver ? "driver" : "rider"}
       initial={{ opacity: 0, y: 16 }}
@@ -93,12 +60,10 @@ export default function LoginPage() {
             to="/driver-register"
             className="font-semibold underline underline-offset-2 text-orange-300"
           >
-            Register as Driver →
+            Register as Driver &rarr;
           </Link>
         </div>
       )}
-
-      <div id="login-recaptcha" />
 
       <div className="space-y-2">
         <Label className="text-white/80 text-sm">Phone Number</Label>
@@ -141,6 +106,9 @@ export default function LoginPage() {
             exit={{ opacity: 0, height: 0 }}
             className="space-y-3 overflow-hidden"
           >
+            <div className="rounded-xl bg-blue-500/10 border border-blue-400/20 p-3 text-sm text-blue-200 text-center">
+              OTP sent to +91{phone}. Check your SMS.
+            </div>
             <div className="space-y-2">
               <Label className="text-white/80 text-sm">Enter 6-digit OTP</Label>
               <Input
@@ -180,6 +148,22 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* Demo Login */}
+      <Button
+        data-ocid="login.demo_button"
+        onClick={handleDemoLogin}
+        disabled={demoLoading || phone.length < 10}
+        variant="outline"
+        className="w-full border-white/20 bg-white/5 hover:bg-green-500/10 hover:border-green-400/40 text-white/70 hover:text-white rounded-xl h-11 text-sm"
+      >
+        {demoLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+        ) : (
+          <LogIn className="w-4 h-4 mr-2" />
+        )}
+        Demo Login (No OTP)
+      </Button>
+
       <Button
         data-ocid="login.secondary_button"
         variant="outline"
@@ -214,9 +198,134 @@ export default function LoginPage() {
       </Button>
     </motion.div>
   );
+}
+
+export default function LoginPage() {
+  const navigate = useNavigate();
+  const { setUserFromLogin } = useAuth();
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"rider" | "driver">("rider");
+  const confirmationRef = useRef<ConfirmationResult | null>(null);
+  const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
+
+  // Initialize invisible reCAPTCHA once on mount
+  useEffect(() => {
+    const verifier = new RecaptchaVerifier(auth, "recaptcha-anchor", {
+      size: "invisible",
+    });
+    recaptchaRef.current = verifier;
+    return () => {
+      verifier.clear();
+      recaptchaRef.current = null;
+    };
+  }, []);
+
+  const handleSendOTP = async () => {
+    if (!phone || phone.length < 10) {
+      toast.error("Enter a valid 10-digit phone number");
+      return;
+    }
+    setLoading(true);
+    try {
+      // Re-create verifier if it was already used (Firebase requires a fresh one after each attempt)
+      if (!recaptchaRef.current) {
+        recaptchaRef.current = new RecaptchaVerifier(auth, "recaptcha-anchor", {
+          size: "invisible",
+        });
+      }
+      const fullPhone = `+91${phone.replace(/\D/g, "")}`;
+      const result = await signInWithPhoneNumber(
+        auth,
+        fullPhone,
+        recaptchaRef.current,
+      );
+      confirmationRef.current = result;
+      setOtpSent(true);
+      toast.success(`OTP sent to +91${phone}`);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to send OTP. Try again.";
+      toast.error(msg);
+      // Clear the verifier so a fresh one is created next attempt
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!otp || otp.length !== 6) {
+      toast.error("Enter the 6-digit OTP");
+      return;
+    }
+    setVerifying(true);
+    try {
+      if (!confirmationRef.current)
+        throw new Error("Session expired. Resend OTP.");
+      await confirmationRef.current.confirm(otp);
+
+      setUserFromLogin(phone, activeTab);
+      const digits = phone.replace(/\D/g, "");
+      const ADMIN_PHONE = "9999999999";
+
+      if (digits === ADMIN_PHONE) {
+        toast.success("Welcome, Admin! Redirecting to dashboard...");
+        navigate({ to: "/admin" });
+      } else if (activeTab === "driver") {
+        toast.success("Welcome, Driver!");
+        navigate({ to: "/driver-dashboard" });
+      } else {
+        toast.success("Login successful! Welcome to PITTHU");
+        navigate({ to: "/" });
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Wrong OTP. Please try again.";
+      toast.error(msg);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleDemoLogin = () => {
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 10) {
+      toast.error("Enter a valid 10-digit phone number first");
+      return;
+    }
+    setDemoLoading(true);
+    setTimeout(() => {
+      setUserFromLogin(digits, activeTab);
+      const ADMIN_PHONE = "9999999999";
+      if (digits === ADMIN_PHONE) {
+        toast.success("Logged in as admin");
+        navigate({ to: "/admin" });
+      } else if (activeTab === "driver") {
+        toast.success("Logged in as driver");
+        navigate({ to: "/driver-dashboard" });
+      } else {
+        toast.success("Logged in as user");
+        navigate({ to: "/" });
+      }
+      setDemoLoading(false);
+    }, 600);
+  };
+
+  const handleGoogle = () => {
+    toast.info("Google login coming soon");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-950 flex flex-col items-center justify-center px-4 py-10">
+      {/* Invisible reCAPTCHA anchor — must stay in the DOM */}
+      <div id="recaptcha-anchor" />
+
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-orange-500/10 blur-3xl" />
@@ -243,7 +352,13 @@ export default function LoginPage() {
         <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl">
           <Tabs
             defaultValue="rider"
-            onValueChange={(v) => setActiveTab(v as "rider" | "driver")}
+            onValueChange={(v) => {
+              setActiveTab(v as "rider" | "driver");
+              // Reset state when switching tabs
+              setOtpSent(false);
+              setOtp("");
+              confirmationRef.current = null;
+            }}
           >
             <TabsList className="w-full bg-white/10 rounded-xl mb-6">
               <TabsTrigger
@@ -262,22 +377,56 @@ export default function LoginPage() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="rider">
-              <PhoneOtpForm isDriver={false} />
+              <PhoneOtpForm
+                isDriver={false}
+                phone={phone}
+                setPhone={setPhone}
+                otp={otp}
+                setOtp={setOtp}
+                otpSent={otpSent}
+                loading={loading}
+                verifying={verifying}
+                demoLoading={demoLoading}
+                handleSendOTP={handleSendOTP}
+                handleVerifyOTP={handleVerifyOTP}
+                handleDemoLogin={handleDemoLogin}
+                handleGoogle={handleGoogle}
+              />
             </TabsContent>
             <TabsContent value="driver">
-              <PhoneOtpForm isDriver={true} />
+              <PhoneOtpForm
+                isDriver={true}
+                phone={phone}
+                setPhone={setPhone}
+                otp={otp}
+                setOtp={setOtp}
+                otpSent={otpSent}
+                loading={loading}
+                verifying={verifying}
+                demoLoading={demoLoading}
+                handleSendOTP={handleSendOTP}
+                handleVerifyOTP={handleVerifyOTP}
+                handleDemoLogin={handleDemoLogin}
+                handleGoogle={handleGoogle}
+              />
             </TabsContent>
           </Tabs>
         </div>
 
-        <p className="text-center text-white/40 text-sm mt-6">
+        <div className="mt-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-xs text-green-300/80 text-center">
+          <span className="font-semibold text-green-300">Demo accounts:</span>{" "}
+          Any 10-digit number = rider &nbsp;|&nbsp; Driver tab = driver
+          &nbsp;|&nbsp; <span className="font-mono">9999999999</span> = admin
+        </div>
+
+        <p className="text-center text-white/40 text-sm mt-4">
           New driver?{" "}
           <Link
             to="/driver-register"
             data-ocid="login.link"
             className="text-orange-400 font-medium hover:text-orange-300 transition-colors"
           >
-            Register here →
+            Register here &rarr;
           </Link>
         </p>
       </motion.div>

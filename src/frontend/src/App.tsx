@@ -7,6 +7,7 @@ import { Suspense, lazy, useState } from "react";
 import Layout from "./components/Layout";
 import OnboardingSlider from "./components/OnboardingSlider";
 import SplashScreen from "./components/SplashScreen";
+import { AuthProvider } from "./contexts/AuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AboutPage from "./pages/AboutPage";
@@ -28,6 +29,7 @@ const DriverDashboardPage = lazy(() => import("./pages/DriverDashboardPage"));
 const PaymentPage = lazy(() => import("./pages/PaymentPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
+const BookingStatusPage = lazy(() => import("./pages/BookingStatusPage"));
 
 const queryClient = new QueryClient();
 
@@ -170,6 +172,18 @@ const termsRoute = createRoute({
     </Suspense>
   ),
 });
+const bookingStatusRoute = createRoute({
+  validateSearch: (search: Record<string, unknown>) => ({
+    bookingId: String(search.bookingId || ""),
+  }),
+  getParentRoute: () => rootRoute,
+  path: "/booking-status",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <BookingStatusPage />
+    </Suspense>
+  ),
+});
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "*",
@@ -194,6 +208,7 @@ const routeTree = rootRoute.addChildren([
   paymentRoute,
   privacyPolicyRoute,
   termsRoute,
+  bookingStatusRoute,
   notFoundRoute,
 ]);
 
@@ -240,7 +255,9 @@ export default function App() {
     <ThemeProvider>
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
-          <AppContent />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </QueryClientProvider>
       </LanguageProvider>
     </ThemeProvider>
