@@ -314,6 +314,13 @@ export default function TripTrackingPage() {
   const fromCity = booking?.pickup ?? "Pickup";
   const toCity = booking?.drop ?? "Drop";
   const vehicleLabel = booking?.vehicle ?? "";
+  const driverName = booking?.driverName ?? "Driver";
+  const driverInitials = driverName
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   const fareLabel = booking?.fare ? `₹${booking.fare}` : "";
 
   const [eta, setEta] = useState(12);
@@ -451,12 +458,12 @@ export default function TripTrackingPage() {
             <CardContent className="p-5">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white font-montserrat font-black text-xl flex-shrink-0">
-                  RS
+                  {driverInitials}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-montserrat font-bold text-foreground">
-                      Ramesh Singh
+                      {driverName}
                     </h3>
                     <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
                       <Shield className="w-3 h-3 mr-1" /> Verified

@@ -15,6 +15,7 @@ export interface StoredBooking {
   convenienceFee?: number; // ₹10 flat
   driverEarnings?: number; // fare - commissionFee - convenienceFee
   adminEarnings?: number; // commissionFee + convenienceFee
+  driverName?: string;
 }
 
 const KEY = "pitthu-bookings";

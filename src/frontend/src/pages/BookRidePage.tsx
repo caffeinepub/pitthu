@@ -215,6 +215,13 @@ export default function BookRidePage() {
         convenienceFee,
         driverEarnings: driverPayout,
         adminEarnings: commissionFee + convenienceFee,
+        driverName: [
+          "Ramesh Singh",
+          "Deepak Negi",
+          "Suresh Rawat",
+          "Mohan Bisht",
+          "Vikram Rana",
+        ][Math.floor(Math.random() * 5)],
       });
       const coins = Math.round(finalFare * 0.05);
       const prevCoins = Number(localStorage.getItem("pitthu-coins") || "0");
@@ -545,31 +552,31 @@ export default function BookRidePage() {
                     {[
                       {
                         type: "private" as RideType,
-                        emoji: "🚗",
+                        img: "/assets/generated/vehicle-innova.dim_400x280.jpg",
                         label: "Private Car",
                         eta: "~8 min",
                       },
                       {
                         type: "shared" as RideType,
-                        emoji: "🚙",
+                        img: "/assets/generated/vehicle-swift.dim_400x280.jpg",
                         label: "Shared Cab",
                         eta: "~5 min",
                       },
                       {
                         type: "bus" as RideType,
-                        emoji: "🚌",
+                        img: "/assets/generated/vehicle-mini-bus.dim_400x280.jpg",
                         label: "Bus",
                         eta: "~12 min",
                       },
                       {
                         type: "bike" as RideType,
-                        emoji: "🏍️",
+                        img: "/assets/generated/vehicle-bullet350.dim_400x280.jpg",
                         label: "Bike",
                         eta: "~3 min",
                       },
                       {
                         type: "scooty" as RideType,
-                        emoji: "🛵",
+                        img: "/assets/generated/vehicle-activa.dim_400x280.jpg",
                         label: "Scooty",
                         eta: "~3 min",
                       },
@@ -589,7 +596,11 @@ export default function BookRidePage() {
                         }`}
                         data-ocid="ride.toggle"
                       >
-                        <div className="text-4xl mb-2">{v.emoji}</div>
+                        <img
+                          src={v.img}
+                          alt={v.label}
+                          className="w-full h-16 object-contain mb-2"
+                        />
                         <p className="font-montserrat font-bold uppercase text-xs text-foreground">
                           {v.label}
                         </p>
