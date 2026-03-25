@@ -243,6 +243,24 @@ export default function ProfilePage() {
             >
               {t("referFriend")}
             </Button>
+            <Link to="/privacy-policy">
+              <Button
+                variant="outline"
+                className="w-full font-montserrat font-bold uppercase rounded-full"
+                data-ocid="profile.link"
+              >
+                Privacy Policy
+              </Button>
+            </Link>
+            <Link to="/terms">
+              <Button
+                variant="outline"
+                className="w-full font-montserrat font-bold uppercase rounded-full"
+                data-ocid="profile.link"
+              >
+                Terms &amp; Conditions
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </div>

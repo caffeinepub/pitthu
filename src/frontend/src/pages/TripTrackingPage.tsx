@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { GOOGLE_MAPS_API_KEY } from "@/lib/apiConfig";
 import { cn } from "@/lib/utils";
 import {
   Car,
@@ -16,11 +17,11 @@ import {
   Share2,
   Shield,
   Star,
-  X,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import GeminiRouteHappenings from "../components/GeminiRouteHappenings";
 import { useHaptic } from "../hooks/useHaptic";
 
 interface ChatMessage {
@@ -108,9 +109,6 @@ export default function TripTrackingPage() {
     setInput("");
   };
 
-  const carX = (progress / 100) * 280 + 40;
-  const carY = 80 + Math.sin((progress / 100) * Math.PI) * -30;
-
   return (
     <div className="min-h-screen bg-muted pb-24">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -130,7 +128,6 @@ export default function TripTrackingPage() {
                 Rishikesh → Kedarnath
               </p>
             </div>
-            {/* Live badge */}
             <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 border border-emerald-300">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-emerald-700 text-xs font-montserrat font-bold uppercase">
@@ -139,106 +136,23 @@ export default function TripTrackingPage() {
             </div>
           </div>
 
-          {/* Enhanced Map */}
+          {/* Google Maps Embed */}
           <Card className="shadow-glass mb-6 overflow-hidden">
             <CardContent className="p-0">
-              <div
-                className="relative bg-slate-900 h-56"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(rgba(59,130,246,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.07) 1px, transparent 1px)",
-                  backgroundSize: "24px 24px",
-                }}
-                data-ocid="tracking.canvas_target"
-              >
-                <svg
-                  className="absolute inset-0 w-full h-full"
-                  viewBox="0 0 360 180"
-                  role="img"
-                  aria-label="Trip route map"
-                >
-                  {/* Hill terrain shading */}
-                  <path
-                    d="M 0 140 Q 60 100 90 120 Q 120 80 160 100 Q 200 60 240 90 Q 280 50 320 70 Q 340 60 360 80 L 360 180 L 0 180 Z"
-                    fill="rgba(59,130,246,0.06)"
-                  />
-                  {/* Road path (thicker background) */}
-                  <path
-                    d="M 40 100 Q 100 60 160 90 Q 220 120 280 80 Q 310 65 330 75"
-                    stroke="rgba(255,255,255,0.08)"
-                    strokeWidth="14"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                  {/* Completed path (blue highlight) */}
-                  <path
-                    d="M 40 100 Q 100 60 160 90 Q 220 120 280 80 Q 310 65 330 75"
-                    stroke="oklch(0.42 0.18 255)"
-                    strokeWidth="3.5"
-                    fill="none"
-                    strokeDasharray="400"
-                    strokeDashoffset={400 - progress * 4}
-                    strokeLinecap="round"
-                    style={{ transition: "stroke-dashoffset 0.3s" }}
-                  />
-                  {/* Remaining path */}
-                  <path
-                    d="M 40 100 Q 100 60 160 90 Q 220 120 280 80 Q 310 65 330 75"
-                    stroke="rgba(255,255,255,0.15)"
-                    strokeWidth="2"
-                    fill="none"
-                    strokeDasharray="8 6"
-                    strokeLinecap="round"
-                  />
-                  {/* Start pin (A) */}
-                  <circle cx="40" cy="100" r="7" fill="#10b981" />
-                  <text
-                    x="40"
-                    y="118"
-                    textAnchor="middle"
-                    fill="#10b981"
-                    fontSize="9"
-                    fontFamily="monospace"
-                  >
-                    A
-                  </text>
-                  {/* End pin (B) */}
-                  <circle cx="330" cy="75" r="7" fill="#ef4444" />
-                  <text
-                    x="330"
-                    y="93"
-                    textAnchor="middle"
-                    fill="#ef4444"
-                    fontSize="9"
-                    fontFamily="monospace"
-                  >
-                    B
-                  </text>
-                  {/* Animated car icon */}
-                  <g transform={`translate(${carX - 10}, ${carY - 8})`}>
-                    <rect
-                      width="20"
-                      height="12"
-                      rx="4"
-                      fill="oklch(0.42 0.18 255)"
-                    />
-                    <rect
-                      x="3"
-                      y="2"
-                      width="14"
-                      height="6"
-                      rx="2"
-                      fill="rgba(255,255,255,0.35)"
-                    />
-                    <circle cx="5" cy="12" r="3" fill="white" />
-                    <circle cx="15" cy="12" r="3" fill="white" />
-                    {/* Headlight glow */}
-                    <circle cx="20" cy="6" r="2" fill="rgba(255,220,50,0.8)" />
-                  </g>
-                </svg>
+              <div className="relative" data-ocid="tracking.canvas_target">
+                <iframe
+                  src={`https://www.google.com/maps/embed/v1/directions?key=${GOOGLE_MAPS_API_KEY}&origin=Rishikesh,Uttarakhand&destination=Kedarnath,Uttarakhand&mode=driving`}
+                  width="100%"
+                  height="224"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Trip route map"
+                />
 
                 {/* ETA overlay */}
-                <div className="absolute top-3 left-3 glass-dark rounded-xl px-3 py-2">
+                <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-xl px-3 py-2">
                   <p className="text-white font-montserrat font-black text-sm uppercase">
                     ETA: {Math.ceil(eta)} min
                   </p>
@@ -248,7 +162,7 @@ export default function TripTrackingPage() {
                 </div>
 
                 {/* Route info overlay */}
-                <div className="absolute top-3 right-3 glass-dark rounded-xl px-2 py-1.5">
+                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm rounded-xl px-2 py-1.5">
                   <p className="text-white/80 text-[10px] font-medium">
                     {Math.round(progress)}% complete
                   </p>
@@ -264,6 +178,8 @@ export default function TripTrackingPage() {
               </div>
             </CardContent>
           </Card>
+
+          <GeminiRouteHappenings from="Rishikesh" to="Kedarnath" />
 
           {/* Driver ETA Card */}
           <Card className="shadow-card mb-6">

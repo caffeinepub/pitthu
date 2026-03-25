@@ -1,5 +1,13 @@
 import { Input } from "@/components/ui/input";
-import { useRef, useState } from "react";
+import { GOOGLE_MAPS_API_KEY } from "@/lib/apiConfig";
+import { useEffect, useRef, useState } from "react";
+
+declare global {
+  interface Window {
+    __googleMapsLoaded?: boolean;
+    google?: any;
+  }
+}
 
 const CITIES = [
   "Dehradun",
@@ -45,6 +53,26 @@ function addToHistory(city: string) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
 }
 
+function loadGoogleMapsScript(): Promise<void> {
+  return new Promise((resolve) => {
+    if (window.__googleMapsLoaded || window.google?.maps?.places) {
+      window.__googleMapsLoaded = true;
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      window.__googleMapsLoaded = true;
+      resolve();
+    };
+    script.onerror = () => resolve(); // fallback to static list
+    document.head.appendChild(script);
+  });
+}
+
 interface Props {
   value: string;
   onChange: (val: string) => void;
@@ -60,11 +88,55 @@ export default function CityAutocomplete({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [history] = useState<string[]>(getHistory);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [mapsReady, setMapsReady] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteServiceRef = useRef<any>(null);
 
-  const filtered = value
-    ? CITIES.filter((c) => c.toLowerCase().includes(value.toLowerCase()))
-    : CITIES;
+  useEffect(() => {
+    loadGoogleMapsScript().then(() => {
+      if (window.google?.maps?.places) {
+        autocompleteServiceRef.current =
+          new window.google.maps.places.AutocompleteService();
+        setMapsReady(true);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!value) {
+      setSuggestions([]);
+      return;
+    }
+    if (mapsReady && autocompleteServiceRef.current) {
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input: value,
+          componentRestrictions: { country: "in" },
+          location: new window.google.maps.LatLng(30.0668, 79.0193), // Uttarakhand center
+          radius: 200000,
+        },
+        (predictions: any[], status: string) => {
+          if (status === "OK" && predictions?.length) {
+            setSuggestions(predictions.map((p: any) => p.description));
+          } else {
+            // Fallback to static list
+            setSuggestions(
+              CITIES.filter((c) =>
+                c.toLowerCase().includes(value.toLowerCase()),
+              ),
+            );
+          }
+        },
+      );
+    } else {
+      setSuggestions(
+        CITIES.filter((c) => c.toLowerCase().includes(value.toLowerCase())),
+      );
+    }
+  }, [value, mapsReady]);
+
+  const displayList = value ? suggestions : CITIES;
 
   const handleSelect = (city: string) => {
     onChange(city);
@@ -112,7 +184,7 @@ export default function CityAutocomplete({
             </div>
           )}
           <ul className="max-h-40 overflow-y-auto">
-            {filtered.map((city) => (
+            {displayList.map((city) => (
               <li
                 key={city}
                 onMouseDown={() => handleSelect(city)}

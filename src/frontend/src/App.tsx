@@ -3,11 +3,13 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { createRootRoute, createRoute } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import Layout from "./components/Layout";
 import OnboardingSlider from "./components/OnboardingSlider";
+import SplashScreen from "./components/SplashScreen";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import AboutPage from "./pages/AboutPage";
 import BookRidePage from "./pages/BookRidePage";
 import DroneDeliveryPage from "./pages/DroneDeliveryPage";
 import LandingPage from "./pages/LandingPage";
@@ -20,6 +22,12 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const SafetyHubPage = lazy(() => import("./pages/SafetyHubPage"));
 const AIConciergePage = lazy(() => import("./pages/AIConciergePage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const DriverRegisterPage = lazy(() => import("./pages/DriverRegisterPage"));
+const DriverDashboardPage = lazy(() => import("./pages/DriverDashboardPage"));
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
 
 const queryClient = new QueryClient();
 
@@ -57,6 +65,11 @@ const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile",
   component: ProfilePage,
+});
+const aboutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/about",
+  component: AboutPage,
 });
 const tripTrackingRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -103,6 +116,60 @@ const aiConciergeRoute = createRoute({
     </Suspense>
   ),
 });
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <LoginPage />
+    </Suspense>
+  ),
+});
+const driverRegisterRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/driver-register",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <DriverRegisterPage />
+    </Suspense>
+  ),
+});
+const driverDashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/driver-dashboard",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <DriverDashboardPage />
+    </Suspense>
+  ),
+});
+const paymentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/payment",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <PaymentPage />
+    </Suspense>
+  ),
+});
+const privacyPolicyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/privacy-policy",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <PrivacyPolicyPage />
+    </Suspense>
+  ),
+});
+const termsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/terms",
+  component: () => (
+    <Suspense fallback={<PageLoader />}>
+      <TermsPage />
+    </Suspense>
+  ),
+});
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "*",
@@ -115,11 +182,18 @@ const routeTree = rootRoute.addChildren([
   droneDeliveryRoute,
   myBookingsRoute,
   profileRoute,
+  aboutRoute,
   tripTrackingRoute,
   adminRoute,
   leaderboardRoute,
   safetyHubRoute,
   aiConciergeRoute,
+  loginRoute,
+  driverRegisterRoute,
+  driverDashboardRoute,
+  paymentRoute,
+  privacyPolicyRoute,
+  termsRoute,
   notFoundRoute,
 ]);
 
@@ -132,9 +206,17 @@ declare module "@tanstack/react-router" {
 }
 
 function AppContent() {
+  const [showSplash, setShowSplash] = useState(
+    () => sessionStorage.getItem("pitthu-splashed") !== "true",
+  );
   const [onboarded, setOnboarded] = useState(
     () => localStorage.getItem("pitthu-onboarded") === "true",
   );
+
+  const handleSplashComplete = () => {
+    sessionStorage.setItem("pitthu-splashed", "true");
+    setShowSplash(false);
+  };
 
   const handleOnboardingComplete = () => {
     localStorage.setItem("pitthu-onboarded", "true");
@@ -143,7 +225,10 @@ function AppContent() {
 
   return (
     <>
-      {!onboarded && <OnboardingSlider onComplete={handleOnboardingComplete} />}
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+      {!onboarded && !showSplash && (
+        <OnboardingSlider onComplete={handleOnboardingComplete} />
+      )}
       <RouterProvider router={router} />
       <Toaster />
     </>

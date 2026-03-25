@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { Menu, Moon, Mountain, Sun, User, X } from "lucide-react";
+import { Menu, Moon, Mountain, Share2, Sun, User, X } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useTheme } from "../contexts/ThemeContext";
 import NotificationCenter from "./NotificationCenter";
@@ -12,6 +13,24 @@ const navLinks = [
   { label: "Drone Delivery", href: "/drone-delivery" },
   { label: "My Bookings", href: "/my-bookings" },
 ];
+
+async function handleShare() {
+  const shareData = {
+    title: "PITTHU - Travel Across Uttarakhand",
+    text: "Book cars, buses & drone delivery across Uttarakhand. Your mountain travel partner!",
+    url: window.location.origin,
+  };
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+    } catch {
+      // user cancelled
+    }
+  } else {
+    await navigator.clipboard.writeText(window.location.origin);
+    toast.success("Link copied to clipboard!");
+  }
+}
 
 export default function Header({ overlay = false }: { overlay?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -74,6 +93,17 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
             ) : (
               <Moon className="w-4 h-4" />
             )}
+          </button>
+
+          {/* Share button */}
+          <button
+            type="button"
+            onClick={handleShare}
+            className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+            aria-label="Share PITTHU"
+            data-ocid="header.share_button"
+          >
+            <Share2 className="w-4 h-4" />
           </button>
 
           {/* Notifications */}
@@ -145,6 +175,16 @@ export default function Header({ overlay = false }: { overlay?: boolean }) {
               )}
             </button>
           </div>
+          <Button
+            className="mt-3 w-full bg-white/20 hover:bg-white/30 text-white font-montserrat font-bold uppercase text-xs rounded-full"
+            onClick={() => {
+              setMobileOpen(false);
+              handleShare();
+            }}
+            data-ocid="header.share_button"
+          >
+            <Share2 className="w-4 h-4 mr-2" /> Share PITTHU
+          </Button>
           <Link to="/book-ride" onClick={() => setMobileOpen(false)}>
             <Button className="mt-2 w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-montserrat font-bold uppercase text-xs rounded-full">
               {t("bookNow")}

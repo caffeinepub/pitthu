@@ -106,53 +106,130 @@ const uttarakhandLocations = [
   "Uttarkashi",
 ];
 
-const CARS = [
+type Vehicle = {
+  id: string;
+  img: string;
+  label: string;
+  price: string;
+  eta: string;
+  badge?: string;
+};
+
+const CARS: Vehicle[] = [
+  {
+    id: "alto",
+    img: "/assets/generated/vehicle-alto.dim_400x280.jpg",
+    label: "Alto",
+    price: "₹600/hr",
+    eta: "~5 min",
+    badge: "Budget",
+  },
+  {
+    id: "baleno",
+    img: "/assets/generated/vehicle-baleno.dim_400x280.jpg",
+    label: "Baleno",
+    price: "₹900/hr",
+    eta: "~6 min",
+    badge: "Popular",
+  },
+  {
+    id: "swift",
+    img: "/assets/generated/vehicle-baleno.dim_400x280.jpg",
+    label: "Swift",
+    price: "₹850/hr",
+    eta: "~6 min",
+    badge: "",
+  },
+  {
+    id: "wagonr",
+    img: "/assets/generated/vehicle-alto.dim_400x280.jpg",
+    label: "WagonR",
+    price: "₹800/hr",
+    eta: "~7 min",
+    badge: "",
+  },
   {
     id: "hatchback",
-    emoji: "🚗",
+    img: "/assets/generated/vehicle-alto.dim_400x280.jpg",
     label: "Hatchback",
     price: "₹800/hr",
     eta: "~8 min",
+    badge: "",
   },
   {
     id: "sedan",
-    emoji: "🚙",
+    img: "/assets/generated/vehicle-baleno.dim_400x280.jpg",
     label: "Sedan",
     price: "₹1200/hr",
     eta: "~6 min",
+    badge: "",
   },
-  { id: "suv", emoji: "🛻", label: "SUV", price: "₹1800/hr", eta: "~10 min" },
+  {
+    id: "suv",
+    img: "/assets/generated/vehicle-innova.dim_400x280.jpg",
+    label: "Innova/SUV",
+    price: "₹1800/hr",
+    eta: "~10 min",
+    badge: "Premium",
+  },
   {
     id: "luxury",
-    emoji: "🏎",
+    img: "/assets/generated/vehicle-innova.dim_400x280.jpg",
     label: "Luxury",
     price: "₹3500/hr",
     eta: "~15 min",
+    badge: "Luxury",
   },
   {
     id: "electric",
-    emoji: "⚡",
+    img: "/assets/generated/vehicle-ev-scooter.dim_400x280.jpg",
     label: "Electric",
     price: "₹1500/hr",
     eta: "~12 min",
+    badge: "EV",
   },
 ];
 
-const TWO_WHEELERS = [
+const TWO_WHEELERS: Vehicle[] = [
   {
-    id: "scooty",
-    emoji: "🛵",
-    label: "Scooty",
+    id: "activa",
+    img: "/assets/generated/vehicle-activa.dim_400x280.jpg",
+    label: "Activa",
     price: "₹300/hr",
     eta: "~4 min",
+    badge: "Popular",
   },
-  { id: "bike", emoji: "🏍", label: "Bike", price: "₹450/hr", eta: "~3 min" },
+  {
+    id: "scooty",
+    img: "/assets/generated/vehicle-activa.dim_400x280.jpg",
+    label: "Scooty",
+    price: "₹280/hr",
+    eta: "~4 min",
+    badge: "",
+  },
+  {
+    id: "bullet",
+    img: "/assets/generated/vehicle-bullet.dim_400x280.jpg",
+    label: "Bullet 350",
+    price: "₹500/hr",
+    eta: "~3 min",
+    badge: "Adventure",
+  },
+  {
+    id: "bike",
+    img: "/assets/generated/vehicle-bullet.dim_400x280.jpg",
+    label: "Bike",
+    price: "₹450/hr",
+    eta: "~3 min",
+    badge: "",
+  },
   {
     id: "ev-scooter",
-    emoji: "⚡🛵",
+    img: "/assets/generated/vehicle-ev-scooter.dim_400x280.jpg",
     label: "EV Scooter",
     price: "₹350/hr",
     eta: "~5 min",
+    badge: "EV",
   },
 ];
 
@@ -165,7 +242,7 @@ export default function LandingPage() {
   const [heroPickup, setHeroPickup] = useState("");
   const [heroDrop, setHeroDrop] = useState("");
   const [vehicleTab, setVehicleTab] = useState<"cars" | "two-wheelers">("cars");
-  const [selectedVehicle, setSelectedVehicle] = useState("sedan");
+  const [selectedVehicle, setSelectedVehicle] = useState("alto");
   const { tap, success } = useHaptic();
 
   const handleGiftSubmit = (e: React.FormEvent) => {
@@ -324,7 +401,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== WILDLIFE ALERT TICKER (sibling) ===== */}
+      {/* ===== WILDLIFE ALERT TICKER ===== */}
       <div className="bg-amber-500/95 text-amber-950 py-2.5 overflow-hidden border-b border-amber-600/30">
         <div className="flex items-center gap-4">
           <div className="flex-shrink-0 pl-4 flex items-center gap-2">
@@ -354,7 +431,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ===== WEATHER ALERTS TICKER (sibling) ===== */}
+      {/* ===== WEATHER ALERTS TICKER ===== */}
       <div className="bg-blue-700/95 text-white py-2.5 overflow-hidden border-b border-blue-600/30">
         <div className="flex items-center gap-4">
           <div className="flex-shrink-0 pl-4 flex items-center gap-2">
@@ -385,7 +462,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ===== AI ROAD HEALTH STRIP (sibling) ===== */}
+      {/* ===== AI ROAD HEALTH STRIP ===== */}
       <section className="py-8 bg-background border-b border-border">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-3">
@@ -471,7 +548,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== VEHICLE SELECTION CAROUSEL (NEW) ===== */}
+      {/* ===== VEHICLE SELECTION CAROUSEL ===== */}
       <section className="py-16 bg-muted border-b border-border">
         <div className="container mx-auto px-4">
           <motion.div
@@ -496,7 +573,7 @@ export default function LandingPage() {
                     onClick={() => {
                       tap();
                       setVehicleTab(tab);
-                      setSelectedVehicle(tab === "cars" ? "sedan" : "scooty");
+                      setSelectedVehicle(tab === "cars" ? "alto" : "activa");
                     }}
                     className={`px-5 py-2 rounded-full text-xs font-montserrat font-bold uppercase transition-all ${
                       vehicleTab === tab
@@ -533,14 +610,25 @@ export default function LandingPage() {
                     tap();
                     setSelectedVehicle(v.id);
                   }}
-                  className={`flex-shrink-0 w-36 md:w-auto cursor-pointer rounded-2xl border-2 p-4 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-card ${
+                  className={`flex-shrink-0 w-44 md:w-auto cursor-pointer rounded-2xl border-2 p-4 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-card ${
                     selectedVehicle === v.id
                       ? "border-primary bg-primary/8 shadow-glass"
                       : "border-border bg-card"
                   }`}
                   data-ocid={`vehicles.item.${i + 1}`}
                 >
-                  <div className="text-5xl mb-3 select-none">{v.emoji}</div>
+                  <div className="w-full h-28 rounded-xl overflow-hidden mb-3 bg-muted">
+                    <img
+                      src={v.img}
+                      alt={v.label}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {v.badge && (
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary mb-1">
+                      {v.badge}
+                    </span>
+                  )}
                   <p className="font-montserrat font-black text-sm text-foreground uppercase tracking-wide">
                     {v.label}
                   </p>
@@ -842,7 +930,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== AI CONCIERGE CTA (SIBLING — not nested in testimonials) ===== */}
+      {/* ===== AI CONCIERGE CTA ===== */}
       <section className="py-16 bg-gradient-to-r from-purple-900 via-indigo-900 to-brand-blue-dark">
         <div className="container mx-auto px-4 text-center">
           <motion.div
@@ -875,6 +963,111 @@ export default function LandingPage() {
                 <Sparkles className="mr-2 w-4 h-4" /> Chat with AI Concierge
               </Button>
             </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ===== ABOUT US ===== */}
+      <section className="py-16 bg-background border-b border-border">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <p className="text-primary font-montserrat font-bold uppercase tracking-[0.25em] text-xs mb-2">
+              Our Story
+            </p>
+            <h2 className="font-montserrat font-extrabold uppercase text-3xl md:text-4xl text-foreground">
+              About PITTHU
+            </h2>
+          </motion.div>
+          <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <img
+                src="/assets/generated/about-us-team.dim_800x500.jpg"
+                alt="PITTHU Team"
+                className="w-full rounded-2xl shadow-card object-cover"
+              />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+            >
+              <p className="text-primary font-montserrat font-bold uppercase tracking-widest text-xs mb-3">
+                Founded with a Vision
+              </p>
+              <h3 className="font-montserrat font-black text-foreground text-2xl mb-4">
+                Connecting the Hills of Uttarakhand
+              </h3>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                PITTHU was born out of a simple need — reliable, safe, and
+                affordable travel across the rugged and beautiful terrain of
+                Uttarakhand. From bustling Dehradun to remote Milam Glacier, we
+                make every journey possible.
+              </p>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                Our mission is to blend cutting-edge technology with a deep
+                understanding of the mountains — offering ride booking, drone
+                delivery, and AI-powered travel planning for locals and tourists
+                alike.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                {[
+                  { value: "50+", label: "Destinations" },
+                  { value: "12K+", label: "Happy Riders" },
+                  { value: "2K+", label: "Drone Deliveries" },
+                  { value: "4.9★", label: "App Rating" },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="bg-muted rounded-xl p-4 text-center min-w-[80px]"
+                  >
+                    <div className="font-montserrat font-black text-xl text-primary">
+                      {stat.value}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {stat.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+          {/* Owner Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-sm mx-auto"
+          >
+            <div className="bg-card rounded-2xl p-8 shadow-card border border-border text-center">
+              <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-primary/20">
+                <img
+                  src="/assets/generated/owner-luv-maithani.dim_400x400.jpg"
+                  alt="Luv Maithani"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h3 className="font-montserrat font-black text-foreground text-xl mb-1">
+                Luv Maithani
+              </h3>
+              <p className="text-primary font-semibold text-sm mb-3">
+                Founder & CEO, PITTHU
+              </p>
+              <p className="text-muted-foreground text-sm leading-relaxed italic">
+                "I grew up watching the mountains be inaccessible to so many.
+                PITTHU is my way of making Uttarakhand reachable for everyone —
+                safely, affordably, and with pride."
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>
